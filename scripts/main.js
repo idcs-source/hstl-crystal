@@ -150,6 +150,41 @@ Hooks.once("ready", async () => {
       console.log("HSTL Crystal | Backfilled the monsters/active fields on existing job listings.");
     }
   }
+
+  // One-time migration: threads used to be stored directionally as
+  // threads[crystalId][contactId], which silently created a second,
+  // out-of-sync copy of a conversation if it was ever viewed from the
+  // other participant's crystal. They're now stored as one shared
+  // thread per pair of participants. This converts anything already
+  // written under the old shape rather than losing it.
+  if (game.user.isGM) {
+    const texting = game.settings.get(MODULE_ID, "texting");
+    if (texting?.threads) {
+      const isOldShape = Object.values(texting.threads).some(v => v && !Array.isArray(v));
+      if (isOldShape) {
+        const newThreads = {};
+        for (const [crystalId, entry] of Object.entries(texting.threads)) {
+          if (Array.isArray(entry)) {
+            // Already new-shape data mixed in somehow — keep it as-is.
+            newThreads[crystalId] = [...(newThreads[crystalId] ?? []), ...entry];
+            continue;
+          }
+          for (const [contactId, messages] of Object.entries(entry ?? {})) {
+            const key = [crystalId, contactId].sort().join("::");
+            const migrated = (messages ?? []).map(m => ({
+              id: m.id,
+              senderId: m.sender === "self" ? crystalId : contactId,
+              text: m.text,
+              timestamp: m.timestamp
+            }));
+            newThreads[key] = [...(newThreads[key] ?? []), ...migrated];
+          }
+        }
+        await game.settings.set(MODULE_ID, "texting", { ...texting, threads: newThreads });
+        console.log("HSTL Crystal | Migrated texting threads to the new shared format.");
+      }
+    }
+  }
 });
 
 /* -------------------------------------------- */
@@ -196,7 +231,7 @@ Hooks.once("ready", () => {
     } else if (data?.type === "replyToPost" && data.postId && data.reply) {
       await appendReply(data.postId, data.reply);
     } else if (data?.type === "sendText" && data.crystalId && data.contactId) {
-      await appendMessage(data.crystalId, data.contactId, "self", data.text);
+      await appendMessage(data.crystalId, data.contactId, data.text);
     }
   });
 });

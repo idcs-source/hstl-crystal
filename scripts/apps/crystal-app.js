@@ -348,7 +348,7 @@ export class CrystalApp extends HandlebarsApplicationMixin(ApplicationV2) {
         context.thread = thread.map(m => ({
           ...m,
           timeDisplay: new Date(m.timestamp).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
-          fromSelf: m.sender === "self"
+          fromSelf: m.senderId === this.selectedCrystalId
         }));
       }
     }

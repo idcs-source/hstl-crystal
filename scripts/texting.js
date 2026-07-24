@@ -14,10 +14,17 @@ const MODULE_ID = "hstl-crystal";
  * are visible on a given crystal. GM-only to edit, via the Texting
  * Manager.
  *
- * threads: { [crystalActorId]: { [contactActorId]: [message, ...] } } —
- * the actual conversation, keyed the same way so each crystal/contact
- * pair has its own independent history.
+ * threads: { [pairKey]: [message, ...] } — one shared thread per pair
+ * of participants, keyed by both Actor ids sorted together so it reads
+ * the same regardless of which side it's opened from. Each message
+ * carries senderId (an Actor id) rather than a relative "self"/"contact"
+ * label, so which side a bubble renders on is computed fresh from
+ * whoever's currently viewing it, not baked in at write time.
  */
+function pairKey(idA, idB) {
+  return [idA, idB].sort().join("::");
+}
+
 export function getTexting() {
   return game.settings.get(MODULE_ID, "texting") ?? { grants: {}, threads: {} };
 }
@@ -48,63 +55,52 @@ export function setGrantedContacts(crystalId, contactIds) {
 }
 
 export function getThread(crystalId, contactId) {
-  return getTexting().threads?.[crystalId]?.[contactId] ?? [];
+  return getTexting().threads?.[pairKey(crystalId, contactId)] ?? [];
 }
 
 /**
- * Appends one message. sender is "self" for a message from whoever
- * currently holds the crystal (a player, or the GM using the phone
- * directly), or "contact" for a message the GM sends as that contact
- * through the Texting Manager — that's the only distinction that
- * decides which side of the thread a bubble renders on.
- *
- * Wrapped in serialize() — this is the fix for messages disappearing
- * when the phone and the Texting Manager both send around the same
- * moment. See utils.js for why.
+ * senderId is whoever actually sent the message — the crystal being
+ * viewed, when sent from the phone, or the contact being puppeted,
+ * when sent from the Texting Manager. otherPartyId is whoever's on the
+ * other end of this specific conversation. Wrapped in serialize() so
+ * the phone and the Texting Manager sending close together can't race.
  */
-export function appendMessage(crystalId, contactId, sender, text) {
+export function appendMessage(senderId, otherPartyId, text) {
   return serialize(async () => {
     const texting = getTexting();
     const threads = { ...(texting.threads ?? {}) };
-    const crystalThreads = { ...(threads[crystalId] ?? {}) };
-    const thread = [...(crystalThreads[contactId] ?? [])];
+    const key = pairKey(senderId, otherPartyId);
+    const thread = [...(threads[key] ?? [])];
     thread.push({
       id: foundry.utils.randomID(8),
-      sender,
+      senderId,
       text,
       timestamp: Date.now()
     });
-    crystalThreads[contactId] = thread;
-    threads[crystalId] = crystalThreads;
+    threads[key] = thread;
     await writeTexting({ threads });
   });
 }
 
-/**
- * GM-only. No player-facing delete action exists for messages — this is
- * exposed from both the phone (when the GM is viewing a crystal
- * directly) and the Texting Manager.
- */
+/** GM-only. Exposed from both the phone and the Texting Manager. */
 export function deleteMessage(crystalId, contactId, messageId) {
   return serialize(async () => {
     const texting = getTexting();
     const threads = { ...(texting.threads ?? {}) };
-    const crystalThreads = { ...(threads[crystalId] ?? {}) };
-    const thread = (crystalThreads[contactId] ?? []).filter(m => m.id !== messageId);
-    crystalThreads[contactId] = thread;
-    threads[crystalId] = crystalThreads;
+    const key = pairKey(crystalId, contactId);
+    threads[key] = (threads[key] ?? []).filter(m => m.id !== messageId);
     await writeTexting({ threads });
   });
 }
 
 /**
- * Player-facing send, always sender "self". Relays to the GM the same
- * way Scry posts do, since only the GM's client can persist a world
- * setting write.
+ * Player-facing send from the phone — always sent as whoever holds the
+ * crystal being viewed. Relays to the GM the same way Scry posts do,
+ * since only the GM's client can persist a world setting write.
  */
 export function submitTextMessage(crystalId, contactId, text) {
   if (game.user.isGM) {
-    return appendMessage(crystalId, contactId, "self", text);
+    return appendMessage(crystalId, contactId, text);
   }
   game.socket.emit(`module.${MODULE_ID}`, { type: "sendText", crystalId, contactId, text });
   return Promise.resolve();

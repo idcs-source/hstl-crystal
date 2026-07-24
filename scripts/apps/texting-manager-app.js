@@ -148,7 +148,7 @@ export class TextingManagerApp extends HandlebarsApplicationMixin(ApplicationV2)
       thread = getThread(this.selectedCrystalId, this.selectedContactId).map(m => ({
         ...m,
         timeDisplay: new Date(m.timestamp).toLocaleString(),
-        fromContact: m.sender === "contact"
+        fromContact: m.senderId === this.selectedContactId
       }));
     }
 
@@ -176,7 +176,7 @@ export class TextingManagerApp extends HandlebarsApplicationMixin(ApplicationV2)
     const input = this.element.querySelector('[name="tmMessage"]');
     const text = input?.value?.trim();
     if (!text || !this.selectedCrystalId || !this.selectedContactId) return;
-    await appendMessage(this.selectedCrystalId, this.selectedContactId, "contact", text);
+    await appendMessage(this.selectedContactId, this.selectedCrystalId, text);
     input.value = "";
     this.render();
   }
