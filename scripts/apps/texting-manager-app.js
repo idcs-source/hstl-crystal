@@ -48,11 +48,11 @@ export class TextingManagerApp extends HandlebarsApplicationMixin(ApplicationV2)
   /** @type {string|null} Which granted contact's thread is open for replying. */
   selectedContactId = null;
 
-  /** @type {number|null} Captured scroll offset restored after the next re-render. */
-  _savedScrollTop = null;
+  /** @type {number|null} Captured scroll offset for the contacts checklist. */
+  _savedChecklistScroll = null;
 
-  /** @type {string|null} Which scrollable container the saved offset belongs to. */
-  _savedScrollSelector = null;
+  /** @type {number|null} Captured scroll offset for the open thread. */
+  _savedThreadScroll = null;
 
   static open() {
     if (!game.user.isGM) {
@@ -107,17 +107,24 @@ export class TextingManagerApp extends HandlebarsApplicationMixin(ApplicationV2)
 
   async _preRender(context, options) {
     await super._preRender(context, options);
-    const scroller = this.element?.querySelector(".tm-thread-scroll, .tm-checklist");
-    this._savedScrollTop = scroller ? scroller.scrollTop : null;
-    this._savedScrollSelector = scroller?.classList.contains("tm-thread-scroll") ? ".tm-thread-scroll" : ".tm-checklist";
+    const checklist = this.element?.querySelector(".tm-checklist");
+    const thread = this.element?.querySelector(".tm-thread-scroll");
+    this._savedChecklistScroll = checklist ? checklist.scrollTop : null;
+    this._savedThreadScroll = thread ? thread.scrollTop : null;
   }
 
   async _onRender(context, options) {
     await super._onRender(context, options);
-    if (this._savedScrollTop == null) return;
-    const scroller = this.element.querySelector(this._savedScrollSelector);
-    if (scroller) scroller.scrollTop = this._savedScrollTop;
-    this._savedScrollTop = null;
+    const checklist = this.element.querySelector(".tm-checklist");
+    if (checklist && this._savedChecklistScroll != null) {
+      checklist.scrollTop = this._savedChecklistScroll;
+    }
+    const thread = this.element.querySelector(".tm-thread-scroll");
+    if (thread && this._savedThreadScroll != null) {
+      thread.scrollTop = this._savedThreadScroll;
+    }
+    this._savedChecklistScroll = null;
+    this._savedThreadScroll = null;
   }
 
   async _prepareContext(_options) {
