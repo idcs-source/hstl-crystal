@@ -64,10 +64,21 @@ export function getThread(crystalId, contactId) {
  * when sent from the Texting Manager. otherPartyId is whoever's on the
  * other end of this specific conversation. Wrapped in serialize() so
  * the phone and the Texting Manager sending close together can't race.
+ *
+ * Sending a message also grants each side visibility of the other, in
+ * both directions, if that grant doesn't already exist. Grants are
+ * still one-directional in storage (a crystal can see a contact
+ * without that contact automatically seeing it back), which matters
+ * for setting up a message before a player has any access at all — but
+ * the moment an actual conversation exists between two crystals a
+ * player *can* already reach, both sides should be able to find and
+ * reply to it without the GM needing to remember to check the box on
+ * both ends separately.
  */
 export function appendMessage(senderId, otherPartyId, text) {
   return serialize(async () => {
     const texting = getTexting();
+
     const threads = { ...(texting.threads ?? {}) };
     const key = pairKey(senderId, otherPartyId);
     const thread = [...(threads[key] ?? [])];
@@ -78,7 +89,16 @@ export function appendMessage(senderId, otherPartyId, text) {
       timestamp: Date.now()
     });
     threads[key] = thread;
-    await writeTexting({ threads });
+
+    const grants = { ...(texting.grants ?? {}) };
+    if (!(grants[senderId] ?? []).includes(otherPartyId)) {
+      grants[senderId] = [...(grants[senderId] ?? []), otherPartyId];
+    }
+    if (!(grants[otherPartyId] ?? []).includes(senderId)) {
+      grants[otherPartyId] = [...(grants[otherPartyId] ?? []), senderId];
+    }
+
+    await writeTexting({ threads, grants });
   });
 }
 

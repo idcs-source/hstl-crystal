@@ -268,17 +268,21 @@ export class CrystalApp extends HandlebarsApplicationMixin(ApplicationV2) {
     }
 
     if (this.view === "scry-feed") {
-      const actors = game.actors?.contents ?? [];
-      if (isGM && !this.selectedPosterId && actors.length) {
-        this.selectedPosterId = actors[0].id;
+      const myActors = isGM
+        ? (game.actors?.contents ?? [])
+        : (game.actors?.contents ?? []).filter(a => a.isOwner);
+
+      if (!this.selectedPosterId && myActors.length) {
+        const myCharacter = game.user.character;
+        this.selectedPosterId = (!isGM && myCharacter && myActors.some(a => a.id === myCharacter.id))
+          ? myCharacter.id
+          : myActors[0].id;
       }
-      if (isGM) {
-        context.actorOptions = actors.map(a => ({
-          id: a.id,
-          name: a.name,
-          selected: a.id === this.selectedPosterId
-        }));
-      }
+      context.actorOptions = myActors.map(a => ({
+        id: a.id,
+        name: a.name,
+        selected: a.id === this.selectedPosterId
+      }));
 
       const myKey = CrystalApp.#getActiveIdentity(this).key;
       const posts = getScryPosts();
@@ -400,21 +404,15 @@ export class CrystalApp extends HandlebarsApplicationMixin(ApplicationV2) {
    * The identity behind every authoring action on Scry — posting,
    * replying, and reacting all resolve through this same function, so a
    * reaction always lines up with whichever character is currently
-   * selected in the composer. The GM picks from the full dropdown of
-   * owned actors; a player without that dropdown always acts as
-   * whatever character Foundry has assigned to their user.
+   * selected in the composer. Everyone gets the same dropdown now, GM
+   * and players alike; a player who only owns one Actor just sees a
+   * dropdown with one option, but this stops assuming a player can only
+   * ever be their single assigned character — once they're granted an
+   * NPC (looting a crystal, say), they need a way to post or reply as
+   * that NPC too, not just their PC.
    */
   static #getActiveIdentity(app) {
-    if (game.user.isGM) {
-      const actor = app.selectedPosterId ? game.actors.get(app.selectedPosterId) : null;
-      return {
-        key: actor?.id ?? "gm-unassigned",
-        actorId: actor?.id ?? null,
-        name: actor?.name ?? "Unknown",
-        img: actor?.prototypeToken?.texture?.src ?? "icons/svg/mystery-man.svg"
-      };
-    }
-    const actor = game.user.character;
+    const actor = app.selectedPosterId ? game.actors.get(app.selectedPosterId) : null;
     return {
       key: actor?.id ?? game.user.id,
       actorId: actor?.id ?? null,
