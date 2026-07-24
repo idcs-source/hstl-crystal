@@ -119,9 +119,11 @@ export function deleteMessage(crystalId, contactId, messageId) {
  * since only the GM's client can persist a world setting write.
  */
 export function submitTextMessage(crystalId, contactId, text) {
+  console.log(`[HSTL] submitTextMessage — isGM=${game.user.isGM}, user=${game.user.name}, crystalId=${crystalId}, contactId=${contactId}`);
   if (game.user.isGM) {
     return appendMessage(crystalId, contactId, text);
   }
   game.socket.emit(`module.${MODULE_ID}`, { type: "sendText", crystalId, contactId, text });
+  console.log("[HSTL] submitTextMessage — relayed over socket to GM");
   return Promise.resolve();
 }

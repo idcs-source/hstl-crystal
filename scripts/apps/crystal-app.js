@@ -160,6 +160,21 @@ export class CrystalApp extends HandlebarsApplicationMixin(ApplicationV2) {
       target.click();
     });
 
+    // Enter submits a composer, Shift+Enter inserts a newline like every
+    // other chat app. Each composer's textarea sits next to exactly one
+    // [data-action] button, so finding the nearest one of these three
+    // containers and clicking whatever button it holds covers the main
+    // Scry composer, a Scry reply composer, and the texting composer
+    // without needing three separate handlers.
+    this.element.addEventListener("keydown", (event) => {
+      if (event.key !== "Enter" || event.shiftKey) return;
+      if (event.target.tagName !== "TEXTAREA") return;
+      const container = event.target.closest(".scry-composer-row, .scry-reply-composer, .texting-composer");
+      if (!container) return;
+      event.preventDefault();
+      container.querySelector("button[data-action]")?.click();
+    });
+
     // The poster <select> gets recreated on every re-render, so this is
     // bound once via delegation on the stable app root instead of on the
     // element itself. Without this, selectedPosterId only ever updated

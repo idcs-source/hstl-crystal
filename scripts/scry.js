@@ -50,11 +50,14 @@ export function submitScryPost({ actorId, actorName, actorImg, text, imagePath }
     replies: []
   };
 
+  console.log(`[HSTL] submitScryPost — isGM=${game.user.isGM}, user=${game.user.name}`, post);
+
   if (game.user.isGM) {
     return writeScryPost(post);
   }
 
   game.socket.emit(`module.${MODULE_ID}`, { type: "createScryPost", post });
+  console.log("[HSTL] submitScryPost — relayed over socket to GM");
   return Promise.resolve();
 }
 
@@ -103,10 +106,12 @@ export function applyReaction(postId, kind, reactorKey, reactorName) {
 }
 
 export function submitReaction(postId, kind, reactorKey, reactorName) {
+  console.log(`[HSTL] submitReaction — isGM=${game.user.isGM}, user=${game.user.name}, kind=${kind}`);
   if (game.user.isGM) {
     return applyReaction(postId, kind, reactorKey, reactorName);
   }
   game.socket.emit(`module.${MODULE_ID}`, { type: "reactToPost", postId, kind, reactorKey, reactorName });
+  console.log("[HSTL] submitReaction — relayed over socket to GM");
   return Promise.resolve();
 }
 
@@ -164,6 +169,7 @@ export function submitReply(postId, { actorId, actorName, actorImg, text }) {
   if (game.user.isGM) {
     return appendReply(postId, reply);
   }
+  console.log(`[HSTL] submitReply — isGM=${game.user.isGM}, user=${game.user.name} — relaying to GM`);
   game.socket.emit(`module.${MODULE_ID}`, { type: "replyToPost", postId, reply });
   return Promise.resolve();
 }

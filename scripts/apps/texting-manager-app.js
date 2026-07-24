@@ -79,6 +79,15 @@ export class TextingManagerApp extends HandlebarsApplicationMixin(ApplicationV2)
   _onFirstRender(context, options) {
     super._onFirstRender(context, options);
 
+    this.element.addEventListener("keydown", (event) => {
+      if (event.key !== "Enter" || event.shiftKey) return;
+      if (event.target.tagName !== "TEXTAREA") return;
+      const container = event.target.closest(".tm-composer");
+      if (!container) return;
+      event.preventDefault();
+      container.querySelector("button[data-action]")?.click();
+    });
+
     this.element.addEventListener("change", (event) => {
       const target = event.target;
 

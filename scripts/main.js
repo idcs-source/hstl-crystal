@@ -215,7 +215,9 @@ Hooks.once("ready", () => {
   // no player-facing controls today, but updateTracker is handled here
   // too so it's relay-safe if that ever changes.
   game.socket.on(`module.${MODULE_ID}`, async (data) => {
+    console.log(`[HSTL] socket message received by ${game.user.name} (isGM=${game.user.isGM})`, data);
     if (!game.user.isGM) return;
+    console.log("[HSTL] processing on GM client, type:", data?.type);
     if (data?.type === "createScryPost" && data.post) {
       await writeScryPost(data.post);
     } else if (data?.type === "updateJob" && data.jobId) {
@@ -232,7 +234,10 @@ Hooks.once("ready", () => {
       await appendReply(data.postId, data.reply);
     } else if (data?.type === "sendText" && data.crystalId && data.contactId) {
       await appendMessage(data.crystalId, data.contactId, data.text);
+    } else {
+      console.warn("[HSTL] socket message did not match any known type/shape — nothing was written", data);
     }
+    console.log("[HSTL] relay handling complete for type:", data?.type);
   });
 });
 
