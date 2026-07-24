@@ -25,7 +25,7 @@
       "name": "GM"
     }
   ],
-  "url": "",
-  "manifest": "",
-  "download": ""
+  "url": "https://github.com/idcs-source/hstl-crystal",
+  "manifest": "https://raw.githubusercontent.com/idcs-source/hstl-crystal/refs/heads/main/module.json",
+  "download": "https://github.com/idcs-source/hstl-crystal/releases/latest/download/hstl-crystal.zip"
 }
