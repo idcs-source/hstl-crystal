@@ -1,0 +1,66 @@
+<div class="tm-body">
+
+  <div class="tm-row">
+    <label class="tm-label" for="tm-crystal-select">Crystal</label>
+    <select id="tm-crystal-select" class="tm-select" data-action="selectCrystal">
+      {{#each crystalOptions}}
+      <option value="{{this.id}}" {{#if this.selected}}selected{{/if}}>{{this.name}}</option>
+      {{/each}}
+    </select>
+  </div>
+
+  <div class="tm-columns">
+    <div class="tm-contacts-col">
+      <div class="tm-col-header">Granted Contacts</div>
+      <div class="tm-checklist">
+        {{#each contactChecklist}}
+        <label class="tm-checklist-row">
+          <input type="checkbox" class="tm-contact-checkbox" data-action="toggleContact" data-contact-id="{{this.id}}" {{#if this.granted}}checked{{/if}} />
+          <span>{{this.name}}</span>
+        </label>
+        {{/each}}
+        {{#unless contactChecklist.length}}
+        <p class="hstl-empty">No other actors exist yet.</p>
+        {{/unless}}
+      </div>
+    </div>
+
+    <div class="tm-thread-col">
+      <div class="tm-row">
+        <label class="tm-label" for="tm-contact-select">Reply As</label>
+        <select id="tm-contact-select" class="tm-select" data-action="selectContact">
+          <option value="">— Select a granted contact —</option>
+          {{#each grantedContacts}}
+          <option value="{{this.id}}" {{#if this.selected}}selected{{/if}}>{{this.name}}</option>
+          {{/each}}
+        </select>
+      </div>
+
+      {{#if selectedContactId}}
+      <div class="tm-thread-scroll">
+        {{#each thread}}
+        <div class="tm-bubble-row {{#if this.fromContact}}tm-bubble-row-contact{{else}}tm-bubble-row-self{{/if}}">
+          <div class="tm-bubble">
+            <div class="tm-bubble-text">{{this.text}}</div>
+            <div class="tm-bubble-time">{{this.timeDisplay}}</div>
+          </div>
+        </div>
+        {{/each}}
+        {{#unless thread.length}}
+        <p class="hstl-empty">No messages yet.</p>
+        {{/unless}}
+      </div>
+
+      <div class="tm-composer">
+        <textarea name="tmMessage" class="tm-input" rows="2" placeholder="Reply as {{activeContactName}}..."></textarea>
+        <button type="button" class="tm-send-btn" data-action="sendAsContact">
+          <i class="fa-solid fa-paper-plane"></i>
+        </button>
+      </div>
+      {{else}}
+      <p class="hstl-empty tm-thread-placeholder">Select a granted contact above to view or reply to that thread.</p>
+      {{/if}}
+    </div>
+  </div>
+
+</div>

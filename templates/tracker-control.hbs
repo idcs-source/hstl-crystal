@@ -1,0 +1,61 @@
+<div class="hstl-tc-body">
+
+  <div class="hstl-tc-row">
+    <label class="hstl-tc-label" for="hstl-tc-job-select">Job</label>
+    <select id="hstl-tc-job-select" class="hstl-tc-select" data-action="selectJob">
+      <option value="">— Custom / none —</option>
+      {{#each jobs}}
+      <option value="{{this.id}}" {{#if this.selected}}selected{{/if}}>{{this.title}}</option>
+      {{/each}}
+    </select>
+  </div>
+
+  <div class="hstl-tc-status">
+    <span class="hstl-tc-status-dot {{#if tracker.active}}hstl-tc-status-dot-live{{/if}}"></span>
+    {{#if tracker.active}}
+    <span>Live for all players — {{tracker.label}}</span>
+    {{else}}
+    <span>Not active. Players see nothing right now.</span>
+    {{/if}}
+  </div>
+
+  <div class="hstl-tc-slots">
+    {{#each slots}}
+    <button type="button" class="hstl-tc-slot hstl-tc-slot-{{this.state}}" data-action="cycleSlot" data-index="{{this.index}}" title="Click to cycle: pending / success / failure">
+      {{#if (eq this.state "success")}}<i class="fa-solid fa-check"></i>{{/if}}
+      {{#if (eq this.state "failure")}}<i class="fa-solid fa-xmark"></i>{{/if}}
+    </button>
+    {{/each}}
+  </div>
+
+  <div class="hstl-tc-btn-row">
+    <button type="button" class="hstl-tc-btn {{#if tracker.active}}hstl-tc-btn-danger{{/if}}" data-action="toggleActive">
+      {{#if tracker.active}}
+      <i class="fa-solid fa-eye-slash"></i> Deactivate for All Players
+      {{else}}
+      <i class="fa-solid fa-eye"></i> Activate for All Players
+      {{/if}}
+    </button>
+    <button type="button" class="hstl-tc-btn hstl-tc-btn-secondary" data-action="resetSlots">
+      <i class="fa-solid fa-rotate-left"></i> Reset Marks
+    </button>
+  </div>
+
+  {{#if selectedJob}}
+  <div class="hstl-tc-monsters-section">
+    <div class="hstl-tc-monsters-header"><i class="fa-solid fa-paw"></i> Suggested Monsters (GM only)</div>
+    {{#if hasMonsters}}
+    {{#each monsters}}
+    <div class="hstl-tc-monster-row">
+      <span class="hstl-tc-monster-name">{{this.name}}</span>
+      <span class="hstl-tc-monster-source">{{this.source}}</span>
+      <span class="hstl-tc-monster-note">{{this.note}}</span>
+    </div>
+    {{/each}}
+    {{else}}
+    <p class="hstl-tc-monsters-empty">No monsters suggested for this job.</p>
+    {{/if}}
+  </div>
+  {{/if}}
+
+</div>

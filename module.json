@@ -1,0 +1,31 @@
+{
+  "id": "hstl-crystal",
+  "title": "HSTL Crystal",
+  "description": "An in-world phone UI for the HSTL gig-work app. Adds a toolbar button that opens a crystal device, showing a home screen of apps, an HSTL job list, and full job detail views.",
+  "version": "1.0.0",
+  "compatibility": {
+    "minimum": "13",
+    "verified": "14"
+  },
+  "esmodules": [
+    "scripts/main.js"
+  ],
+  "styles": [
+    "styles/hstl-crystal.css"
+  ],
+  "languages": [
+    {
+      "lang": "en",
+      "name": "English",
+      "path": "lang/en.json"
+    }
+  ],
+  "authors": [
+    {
+      "name": "GM"
+    }
+  ],
+  "url": "",
+  "manifest": "",
+  "download": ""
+}

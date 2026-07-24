@@ -1,0 +1,381 @@
+<div class="crystal-frame" style="background-image: url('{{frameImage}}');">
+  <div class="crystal-screen">
+
+    {{!-- ===================== HOME SCREEN ===================== --}}
+    {{#if (eq view "home")}}
+    <div class="crystal-view crystal-home" {{#if homeWallpaper}}style="background-image: url('{{homeWallpaper}}');"{{/if}}>
+      <div class="crystal-bg-controls">
+        <button type="button" class="crystal-bg-btn" data-action="customizeBackground" title="Set a personal home screen wallpaper (only visible to you)">
+          <i class="fa-solid fa-image"></i>
+        </button>
+        {{#if hasCustomBackground}}
+        <button type="button" class="crystal-bg-btn" data-action="resetBackground" title="Reset to the default wallpaper">
+          <i class="fa-solid fa-rotate-left"></i>
+        </button>
+        {{/if}}
+      </div>
+      <div class="crystal-app-grid">
+        {{#each apps}}
+        <div role="button" tabindex="0" class="crystal-app-icon" data-action="openApp" data-app-id="{{this.id}}">
+          <span class="crystal-icon-glyph">
+            {{#if this.image}}
+            <img src="{{this.image}}" class="crystal-icon-img" alt="{{this.label}}" />
+            {{else}}
+            <i class="{{this.icon}}"></i>
+            {{/if}}
+          </span>
+          <span class="crystal-icon-label">{{this.label}}</span>
+        </div>
+        {{/each}}
+      </div>
+    </div>
+    {{/if}}
+
+    {{!-- ===================== HSTL JOB LIST ===================== --}}
+    {{#if (eq view "hstl-list")}}
+    <div class="crystal-view crystal-hstl-list">
+      <div class="hstl-header">
+        <button type="button" class="hstl-back" data-action="goHome">
+          <i class="fa-solid fa-chevron-left"></i>
+        </button>
+        <span class="hstl-header-title">HSTL</span>
+        <span class="hstl-header-spacer"></span>
+      </div>
+      <div class="hstl-job-scroll">
+        {{#each tierGroups}}
+        <div class="hstl-tier-block">
+          <div class="hstl-tier-header">{{this.label}}</div>
+          {{#each this.jobs}}
+          <div role="button" tabindex="0" class="hstl-job-card {{#if (eq this.status "claimed")}}hstl-job-card-claimed{{/if}} {{#if this.isInactive}}hstl-job-card-inactive{{/if}}" data-action="openJob" data-job-id="{{this.id}}">
+            <div class="hstl-job-card-top">
+              <span class="hstl-job-title">{{this.title}}</span>
+              <span class="hstl-job-payout">{{this.payoutDisplay}}</span>
+            </div>
+            <div class="hstl-job-card-bottom">
+              <span class="hstl-job-category">{{this.category}}</span>
+              {{#if this.isInactive}}
+              <span class="hstl-job-inactive-tag">Inactive</span>
+              {{else if (eq this.status "claimed")}}
+              <span class="hstl-job-claimed-tag">Claimed</span>
+              {{else}}
+              <span class="hstl-job-rating"><i class="fa-solid fa-star"></i> {{this.rating}}</span>
+              {{/if}}
+            </div>
+          </div>
+          {{/each}}
+        </div>
+        {{/each}}
+        {{#unless tierGroups.length}}
+        <p class="hstl-empty">No listings right now. Check back soon.</p>
+        {{/unless}}
+      </div>
+    </div>
+    {{/if}}
+
+    {{!-- ===================== HSTL JOB DETAIL ===================== --}}
+    {{#if (eq view "hstl-detail")}}
+    <div class="crystal-view crystal-hstl-detail">
+      <div class="hstl-header">
+        <button type="button" class="hstl-back" data-action="goBackToList">
+          <i class="fa-solid fa-chevron-left"></i>
+        </button>
+        <span class="hstl-header-title">Listing</span>
+        <span class="hstl-header-spacer"></span>
+      </div>
+      {{#if selectedJob}}
+      <div class="hstl-detail-scroll">
+        <h2 class="hstl-detail-title">{{selectedJob.title}}</h2>
+        <div class="hstl-detail-meta">
+          <span class="hstl-detail-payout">{{selectedJob.payout}}g</span>
+          <span class="hstl-detail-rating"><i class="fa-solid fa-star"></i> {{selectedJob.rating}}</span>
+        </div>
+        <div class="hstl-detail-row"><span class="hstl-detail-label">Tier</span><span>{{selectedJob.tier}}</span></div>
+        <div class="hstl-detail-row"><span class="hstl-detail-label">Category</span><span>{{selectedJob.category}}</span></div>
+        <div class="hstl-detail-row"><span class="hstl-detail-label">Posted by</span><span>{{selectedJob.poster}}</span></div>
+        <div class="hstl-detail-row"><span class="hstl-detail-label">Tracker</span><span>{{selectedJob.tracker}}</span></div>
+        <div class="hstl-detail-description">{{selectedJob.description}}</div>
+
+        {{#if selectedJob.canAccept}}
+        <button type="button" class="hstl-accept-btn" data-action="acceptJob" data-job-id="{{selectedJob.id}}">Accept Listing</button>
+        {{/if}}
+
+        {{#if selectedJob.isClaimed}}
+        <div class="hstl-status-banner">Claimed by {{selectedJob.claimedBy}}</div>
+        {{/if}}
+
+        {{#if selectedJob.isClosed}}
+        <div class="hstl-status-banner hstl-status-banner-closed">Completed</div>
+        {{/if}}
+
+        {{#if isGM}}
+        <div class="hstl-gm-controls">
+          {{#if selectedJob.canMarkComplete}}
+          <button type="button" class="hstl-gm-btn" data-action="markComplete" data-job-id="{{selectedJob.id}}">
+            <i class="fa-solid fa-check"></i> Mark Complete
+          </button>
+          {{/if}}
+          {{#if selectedJob.canReopen}}
+          <button type="button" class="hstl-gm-btn hstl-gm-btn-secondary" data-action="reopenJob" data-job-id="{{selectedJob.id}}">
+            <i class="fa-solid fa-rotate-left"></i> Reopen Listing
+          </button>
+          {{/if}}
+        </div>
+        {{/if}}
+      </div>
+      {{else}}
+      <p class="hstl-empty">Listing not found.</p>
+      {{/if}}
+    </div>
+    {{/if}}
+
+    {{!-- ===================== SCRY FEED ===================== --}}
+    {{#if (eq view "scry-feed")}}
+    <div class="crystal-view crystal-scry-feed">
+      <div class="hstl-header">
+        <button type="button" class="hstl-back" data-action="goHome">
+          <i class="fa-solid fa-chevron-left"></i>
+        </button>
+        <span class="hstl-header-title">Scry</span>
+        <span class="hstl-header-spacer"></span>
+      </div>
+
+      <div class="scry-post-scroll">
+        {{#each scryPosts}}
+        <div class="scry-post" data-post-id="{{this.id}}">
+          <img class="scry-post-avatar" src="{{this.actorImg}}" alt="{{this.actorName}}" />
+          <div class="scry-post-body">
+            <div class="scry-post-meta">
+              <span class="scry-post-name">{{this.actorName}}</span>
+              <span class="scry-post-time">{{this.timeDisplay}}</span>
+            </div>
+            <div class="scry-post-text">{{this.text}}</div>
+            {{#if this.imagePath}}
+            <img class="scry-post-image" src="{{this.imagePath}}" alt="" />
+            {{/if}}
+
+            <div class="scry-post-reactions">
+              <button type="button" class="scry-reaction-btn {{#if this.isLikedByMe}}scry-reaction-btn-active{{/if}}" data-action="likePost" data-post-id="{{this.id}}">
+                <i class="fa-solid fa-thumbs-up"></i> {{this.likeCount}}
+              </button>
+              <button type="button" class="scry-reaction-btn {{#if this.isDislikedByMe}}scry-reaction-btn-active{{/if}}" data-action="dislikePost" data-post-id="{{this.id}}">
+                <i class="fa-solid fa-thumbs-down"></i> {{this.dislikeCount}}
+              </button>
+              <button type="button" class="scry-reaction-btn" data-action="toggleReply" data-post-id="{{this.id}}">
+                <i class="fa-solid fa-reply"></i> Reply
+              </button>
+              {{#if ../isGM}}
+              <input type="number" class="scry-boost-amount" min="1" step="1" value="{{this.boostAmount}}" data-post-id="{{this.id}}" title="Amount added/removed per boost click" />
+              <button type="button" class="scry-boost-btn" data-action="boostLike" data-post-id="{{this.id}}" title="Add this many phantom likes">
+                <i class="fa-solid fa-plus"></i> like
+              </button>
+              <button type="button" class="scry-boost-minus" data-action="unboostLike" data-post-id="{{this.id}}" title="Remove this many phantom likes">
+                <i class="fa-solid fa-minus"></i> like
+              </button>
+              <button type="button" class="scry-boost-btn" data-action="boostDislike" data-post-id="{{this.id}}" title="Add this many phantom dislikes">
+                <i class="fa-solid fa-plus"></i> dislike
+              </button>
+              <button type="button" class="scry-boost-minus" data-action="unboostDislike" data-post-id="{{this.id}}" title="Remove this many phantom dislikes">
+                <i class="fa-solid fa-minus"></i> dislike
+              </button>
+              {{/if}}
+            </div>
+
+            {{#if this.likeSummary}}
+            <div class="scry-reaction-summary">{{this.likeSummary}} liked this</div>
+            {{/if}}
+
+            {{#if this.replies.length}}
+            <div class="scry-reply-thread">
+              {{#each this.replies}}
+              <div class="scry-reply">
+                <img class="scry-reply-avatar" src="{{this.actorImg}}" alt="{{this.actorName}}" />
+                <div class="scry-reply-body">
+                  <div class="scry-reply-meta">
+                    <span class="scry-reply-name">{{this.actorName}}</span>
+                    <span class="scry-reply-time">{{this.timeDisplay}}</span>
+                  </div>
+                  <div class="scry-reply-text">{{this.text}}</div>
+                </div>
+              </div>
+              {{/each}}
+            </div>
+            {{/if}}
+
+            {{#if this.replyOpen}}
+            <div class="scry-reply-composer">
+              <textarea data-reply-input-for="{{this.id}}" class="scry-reply-input" rows="1" placeholder="Write a reply..."></textarea>
+              <button type="button" class="scry-post-btn" data-action="postReply" data-post-id="{{this.id}}">
+                <i class="fa-solid fa-paper-plane"></i>
+              </button>
+            </div>
+            {{/if}}
+          </div>
+          {{#if ../isGM}}
+          <button type="button" class="scry-post-delete" data-action="deleteScry" title="Delete post">
+            <i class="fa-solid fa-trash"></i>
+          </button>
+          {{/if}}
+        </div>
+        {{/each}}
+        {{#unless scryPosts.length}}
+        <p class="hstl-empty">Nothing here yet.</p>
+        {{/unless}}
+      </div>
+
+      <div class="scry-composer">
+        {{#if isGM}}
+        <select name="scryPoster" class="scry-poster-select">
+          {{#each actorOptions}}
+          <option value="{{this.id}}" {{#if this.selected}}selected{{/if}}>{{this.name}}</option>
+          {{/each}}
+        </select>
+        {{/if}}
+        {{#if pendingImagePath}}
+        <div class="scry-pending-image">
+          <img src="{{pendingImagePath}}" alt="" />
+          <button type="button" class="scry-pending-image-remove" data-action="removeAttachedImage" title="Remove image">
+            <i class="fa-solid fa-xmark"></i>
+          </button>
+        </div>
+        {{/if}}
+        <div class="scry-composer-row">
+          <button type="button" class="scry-attach-btn" data-action="attachImage" title="Attach image">
+            <i class="fa-solid fa-image"></i>
+          </button>
+          <textarea name="scryPostText" class="scry-post-input" rows="2" placeholder="Write something..."></textarea>
+          <button type="button" class="scry-post-btn" data-action="postScry">
+            <i class="fa-solid fa-paper-plane"></i>
+          </button>
+        </div>
+      </div>
+    </div>
+    {{/if}}
+
+    {{!-- ===================== BANKING ===================== --}}
+    {{#if (eq view "banking")}}
+    <div class="crystal-view crystal-banking">
+      <div class="hstl-header">
+        <button type="button" class="hstl-back" data-action="goHome">
+          <i class="fa-solid fa-chevron-left"></i>
+        </button>
+        <span class="hstl-header-title">Banking</span>
+        <span class="hstl-header-spacer"></span>
+      </div>
+
+      <div class="bank-scroll">
+        <div class="bank-card">
+          <div class="bank-card-label">Gold</div>
+          <div class="bank-card-value">{{bank.goldDisplay}}</div>
+
+          {{#if isGM}}
+          <div class="bank-adjuster">
+            <div class="bank-adjuster-row">
+              <input type="number" id="bank-adjust-gold-gold" class="bank-adjust-input" placeholder="g" min="0" />
+              <input type="number" id="bank-adjust-gold-silver" class="bank-adjust-input" placeholder="s" min="0" max="9" />
+              <button type="button" class="bank-adjust-btn" data-action="adjustBank" data-target="gold" data-mode="add" title="Add to gold">+</button>
+              <button type="button" class="bank-adjust-btn" data-action="adjustBank" data-target="gold" data-mode="subtract" title="Subtract from gold">−</button>
+              <button type="button" class="bank-adjust-btn bank-adjust-btn-set" data-action="adjustBank" data-target="gold" data-mode="set" title="Set gold exactly">Set</button>
+            </div>
+          </div>
+          {{/if}}
+        </div>
+
+        <div class="bank-card">
+          <div class="bank-card-label">Debt</div>
+          <div class="bank-card-value">{{bank.debtPaidDisplay}} <span class="bank-card-value-slash">/</span> {{bank.debtTotalDisplay}}</div>
+          <div class="bank-card-sub">{{bank.debtRemainingDisplay}} remaining</div>
+
+          {{#if isGM}}
+          <div class="bank-adjuster">
+            <div class="bank-adjuster-label">Debt Total</div>
+            <div class="bank-adjuster-row">
+              <input type="number" id="bank-adjust-debtTotal-gold" class="bank-adjust-input" placeholder="g" min="0" />
+              <input type="number" id="bank-adjust-debtTotal-silver" class="bank-adjust-input" placeholder="s" min="0" max="9" />
+              <button type="button" class="bank-adjust-btn" data-action="adjustBank" data-target="debtTotal" data-mode="add" title="Add to total debt (e.g. interest)">+</button>
+              <button type="button" class="bank-adjust-btn" data-action="adjustBank" data-target="debtTotal" data-mode="subtract" title="Subtract from total debt">−</button>
+              <button type="button" class="bank-adjust-btn bank-adjust-btn-set" data-action="adjustBank" data-target="debtTotal" data-mode="set" title="Set total debt exactly">Set</button>
+            </div>
+          </div>
+          <div class="bank-adjuster">
+            <div class="bank-adjuster-label">Debt Paid</div>
+            <div class="bank-adjuster-row">
+              <input type="number" id="bank-adjust-debtPaid-gold" class="bank-adjust-input" placeholder="g" min="0" />
+              <input type="number" id="bank-adjust-debtPaid-silver" class="bank-adjust-input" placeholder="s" min="0" max="9" />
+              <button type="button" class="bank-adjust-btn" data-action="adjustBank" data-target="debtPaid" data-mode="add" title="Add to debt paid">+</button>
+              <button type="button" class="bank-adjust-btn" data-action="adjustBank" data-target="debtPaid" data-mode="subtract" title="Subtract from debt paid">−</button>
+              <button type="button" class="bank-adjust-btn bank-adjust-btn-set" data-action="adjustBank" data-target="debtPaid" data-mode="set" title="Set debt paid exactly">Set</button>
+            </div>
+          </div>
+          {{/if}}
+        </div>
+      </div>
+    </div>
+    {{/if}}
+
+    {{!-- ===================== TEXTING INBOX ===================== --}}
+    {{#if (eq view "texting-inbox")}}
+    <div class="crystal-view crystal-texting">
+      <div class="hstl-header">
+        <button type="button" class="hstl-back" data-action="goHome">
+          <i class="fa-solid fa-chevron-left"></i>
+        </button>
+        <span class="hstl-header-title">Texts</span>
+        <span class="hstl-header-spacer"></span>
+      </div>
+
+      <select class="texting-crystal-select">
+        {{#each crystalOptions}}
+        <option value="{{this.id}}" {{#if this.selected}}selected{{/if}}>{{this.name}}</option>
+        {{/each}}
+      </select>
+
+      <div class="texting-contact-list">
+        {{#each contacts}}
+        <div role="button" tabindex="0" class="texting-contact-row" data-action="openContact" data-contact-id="{{this.id}}">
+          <span class="texting-contact-name">{{this.name}}</span>
+          <i class="fa-solid fa-chevron-right"></i>
+        </div>
+        {{/each}}
+        {{#unless contacts.length}}
+        <p class="hstl-empty">No contacts yet.</p>
+        {{/unless}}
+      </div>
+    </div>
+    {{/if}}
+
+    {{!-- ===================== TEXTING THREAD ===================== --}}
+    {{#if (eq view "texting-thread")}}
+    <div class="crystal-view crystal-texting-thread">
+      <div class="hstl-header">
+        <button type="button" class="hstl-back" data-action="goBackToTexting">
+          <i class="fa-solid fa-chevron-left"></i>
+        </button>
+        <span class="hstl-header-title">{{activeContactName}}</span>
+        <span class="hstl-header-spacer"></span>
+      </div>
+
+      <div class="texting-thread-scroll">
+        {{#each thread}}
+        <div class="texting-bubble-row {{#if this.fromSelf}}texting-bubble-row-self{{else}}texting-bubble-row-contact{{/if}}">
+          <div class="texting-bubble">
+            <div class="texting-bubble-text">{{this.text}}</div>
+            <div class="texting-bubble-time">{{this.timeDisplay}}</div>
+          </div>
+        </div>
+        {{/each}}
+        {{#unless thread.length}}
+        <p class="hstl-empty">No messages yet.</p>
+        {{/unless}}
+      </div>
+
+      <div class="texting-composer">
+        <textarea name="textingMessage" class="texting-input" rows="1" placeholder="Text message..."></textarea>
+        <button type="button" class="scry-post-btn" data-action="sendText">
+          <i class="fa-solid fa-paper-plane"></i>
+        </button>
+      </div>
+    </div>
+    {{/if}}
+
+  </div>
+</div>

@@ -1,0 +1,75 @@
+<div class="hstl-manager">
+  <p class="hstl-manager-hint">Edit listings below, then click Save. Listings are grouped by tier for scanning; change a job's Tier field and it'll move to the right section after your next save.</p>
+
+  <div class="hstl-manager-toolbar">
+    <button type="button" data-action="addJob"><i class="fa-solid fa-plus"></i> Add Listing</button>
+    <button type="button" data-action="saveOnly"><i class="fa-solid fa-floppy-disk"></i> Save</button>
+  </div>
+
+  {{#each tierGroups}}
+  <h3 class="hstl-manager-tier-header">{{this.label}}</h3>
+  <div class="hstl-manager-list">
+    {{#each this.jobs}}
+    <fieldset class="hstl-manager-row {{#unless this.active}}hstl-manager-row-inactive{{/unless}}" data-job-id="{{this.id}}">
+      <legend>
+        {{this.title}}
+        {{#if this.claimedBy}}<span class="hstl-manager-claimed-tag">claimed by {{this.claimedBy}}</span>{{/if}}
+      </legend>
+
+      <label class="hstl-manager-active-toggle">
+        <input type="checkbox" name="active" {{#if this.active}}checked{{/if}} />
+        Active (visible to players)
+      </label>
+
+      <label>Title
+        <input type="text" name="title" value="{{this.title}}" />
+      </label>
+
+      <label>Tier
+        <input type="number" name="tier" value="{{this.tier}}" min="1" max="5" />
+      </label>
+
+      <label>Category
+        <input type="text" name="category" value="{{this.category}}" />
+      </label>
+
+      <label>Payout (gold)
+        <input type="number" name="payout" value="{{this.payout}}" min="0" />
+      </label>
+
+      <label>Rating
+        <input type="number" name="rating" value="{{this.rating}}" min="1" max="5" step="0.1" />
+      </label>
+
+      <label>Posted by
+        <input type="text" name="poster" value="{{this.poster}}" />
+      </label>
+
+      <label>Tracker
+        <input type="text" name="tracker" value="{{this.tracker}}" />
+      </label>
+
+      <label>Status
+        <select name="status">
+          <option value="open" {{#if (eq this.status "open")}}selected{{/if}}>Open</option>
+          <option value="claimed" {{#if (eq this.status "claimed")}}selected{{/if}}>Claimed</option>
+          <option value="closed" {{#if (eq this.status "closed")}}selected{{/if}}>Closed / Complete</option>
+        </select>
+      </label>
+
+      <label class="hstl-manager-desc">Description
+        <textarea name="description" rows="3">{{this.description}}</textarea>
+      </label>
+
+      <button type="button" class="hstl-manager-delete" data-action="deleteJob">
+        <i class="fa-solid fa-trash"></i> Remove
+      </button>
+    </fieldset>
+    {{/each}}
+  </div>
+  {{/each}}
+
+  {{#unless tierGroups.length}}
+  <p class="hstl-empty">No listings yet. Click Add Listing to create one.</p>
+  {{/unless}}
+</div>

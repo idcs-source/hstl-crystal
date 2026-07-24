@@ -1,0 +1,122 @@
+[
+  {
+    "id": "pet-monitoring",
+    "tier": 1,
+    "title": "Exotic Pet Monitoring, No Experience Required",
+    "category": "Pet Care",
+    "payout": 150,
+    "rating": 4.8,
+    "poster": "Anonymous Client",
+    "description": "Watch a clutch of eggs belonging to a client currently traveling. Payment is withheld if an egg is damaged.",
+    "tracker": "Mishaps Prevented",
+    "status": "open",
+    "monsters": [
+      {
+        "name": "Flying Snake",
+        "source": "SRD, CR 1/8",
+        "note": "Reskin as an egg-thief serpent slipping in through a vent or window."
+      },
+      {
+        "name": "Giant Owl",
+        "source": "SRD, CR 1/4",
+        "note": "Reskin as a swooping predator drawn by the nest's warmth, more nuisance than threat."
+      }
+    ],
+    "active": true
+  },
+  {
+    "id": "starter-guard",
+    "tier": 1,
+    "title": "Overnight Starter Guard",
+    "category": "Security",
+    "payout": 90,
+    "rating": 4.5,
+    "poster": "Late Watch Bakery",
+    "description": "A bakery needs its sourdough starter protected from a rival baker for one night.",
+    "tracker": "Watch Successes",
+    "status": "open",
+    "monsters": [
+      {
+        "name": "Bandit",
+        "source": "SRD, CR 1/8",
+        "note": "Reskin as a hired saboteur sent to sabotage or steal the starter."
+      },
+      {
+        "name": "Commoner",
+        "source": "SRD, CR 0",
+        "note": "Reskin as the rival baker themselves, for a confrontation meant to stay non-lethal."
+      }
+    ],
+    "active": true
+  },
+  {
+    "id": "companion-reading",
+    "tier": 1,
+    "title": "Companion Reading Service",
+    "category": "Companionship",
+    "payout": 60,
+    "rating": 4.9,
+    "poster": "Retired Treant",
+    "description": "A retired treant, unable to turn its own pages, pays for someone to read aloud daily over the course of a week.",
+    "tracker": "Client Satisfaction",
+    "status": "open",
+    "monsters": [],
+    "active": true
+  },
+  {
+    "id": "waterproof-courier",
+    "tier": 2,
+    "title": "Waterproof Courier Needed",
+    "category": "Delivery",
+    "payout": 220,
+    "rating": 4.6,
+    "poster": "Merfolk Trader",
+    "description": "Deliver letters to a partner across a body of water. Some means of breathing underwater required.",
+    "tracker": "Deliveries Made Without Damage",
+    "status": "open",
+    "monsters": [],
+    "active": true
+  },
+  {
+    "id": "seasonal-harvest",
+    "tier": 2,
+    "title": "Seasonal Harvest, Time-Sensitive",
+    "category": "Planar",
+    "payout": 300,
+    "rating": 4.3,
+    "poster": "Anonymous",
+    "description": "A Feywild garden opens once a season and needs a specific fruit harvested before the opening closes.",
+    "tracker": "Bargains Avoided",
+    "status": "open",
+    "monsters": [],
+    "active": true
+  },
+  {
+    "id": "modron-escort",
+    "tier": 2,
+    "title": "Escort: One Modron, Straight Line Preferred",
+    "category": "Escort",
+    "payout": 275,
+    "rating": 4.1,
+    "poster": "Mechanus Liaison Office",
+    "description": "A minor Modron separated from Mechanus needs guidance back to a portal, insisting on a perfectly straight route regardless of terrain.",
+    "tracker": "Line Integrity Maintained",
+    "status": "open",
+    "monsters": [],
+    "active": true
+  },
+  {
+    "id": "deep-clean",
+    "tier": 3,
+    "title": "Deep Clean, Some Shrinkage Possible",
+    "category": "Cleaning",
+    "payout": 340,
+    "rating": 4.4,
+    "poster": "Homeowner",
+    "description": "Routine house-cleaning job. Terms and conditions apply.",
+    "tracker": "Hazards Survived",
+    "status": "open",
+    "monsters": [],
+    "active": true
+  }
+]
