@@ -29,9 +29,6 @@ export class TextingManagerApp extends HandlebarsApplicationMixin(ApplicationV2)
       height: 560
     },
     actions: {
-      selectCrystal: TextingManagerApp.#onSelectCrystal,
-      toggleContact: TextingManagerApp.#onToggleContact,
-      selectContact: TextingManagerApp.#onSelectContact,
       sendAsContact: TextingManagerApp.#onSendAsContact
     }
   };
@@ -53,6 +50,9 @@ export class TextingManagerApp extends HandlebarsApplicationMixin(ApplicationV2)
   /** @type {number|null} Captured scroll offset restored after the next re-render. */
   _savedScrollTop = null;
 
+  /** @type {string|null} Which scrollable container the saved offset belongs to. */
+  _savedScrollSelector = null;
+
   static open() {
     if (!game.user.isGM) {
       ui.notifications.warn("Only the GM can open the Texting Manager.");
@@ -65,16 +65,56 @@ export class TextingManagerApp extends HandlebarsApplicationMixin(ApplicationV2)
     return TextingManagerApp.instance;
   }
 
+  /**
+   * The crystal select, contact select, and every contact checkbox are
+   * all wired up here via one delegated listener on the stable app root,
+   * rather than through data-action. Foundry's action delegation is
+   * reliably click-based; relying on it for "change" on selects and
+   * checkboxes was what caused every field to appear to reset the
+   * instant one was touched, since the state read back out often didn't
+   * match what was actually clicked. This mirrors the same fix already
+   * applied to the Scry poster dropdown for the same underlying reason.
+   */
+  _onFirstRender(context, options) {
+    super._onFirstRender(context, options);
+
+    this.element.addEventListener("change", (event) => {
+      const target = event.target;
+
+      if (target.matches?.("#tm-crystal-select")) {
+        this.selectedCrystalId = target.value || null;
+        this.selectedContactId = null;
+        this.render();
+        return;
+      }
+
+      if (target.matches?.("#tm-contact-select")) {
+        this.selectedContactId = target.value || null;
+        this.render();
+        return;
+      }
+
+      if (target.matches?.(".tm-contact-checkbox")) {
+        const contactId = target.dataset.contactId;
+        const current = new Set(getGrantedContacts(this.selectedCrystalId));
+        if (target.checked) current.add(contactId);
+        else current.delete(contactId);
+        setGrantedContacts(this.selectedCrystalId, Array.from(current)).then(() => this.render());
+      }
+    });
+  }
+
   async _preRender(context, options) {
     await super._preRender(context, options);
-    const scroller = this.element?.querySelector(".tm-thread-scroll");
+    const scroller = this.element?.querySelector(".tm-thread-scroll, .tm-checklist");
     this._savedScrollTop = scroller ? scroller.scrollTop : null;
+    this._savedScrollSelector = scroller?.classList.contains("tm-thread-scroll") ? ".tm-thread-scroll" : ".tm-checklist";
   }
 
   async _onRender(context, options) {
     await super._onRender(context, options);
     if (this._savedScrollTop == null) return;
-    const scroller = this.element.querySelector(".tm-thread-scroll");
+    const scroller = this.element.querySelector(this._savedScrollSelector);
     if (scroller) scroller.scrollTop = this._savedScrollTop;
     this._savedScrollTop = null;
   }
@@ -130,26 +170,6 @@ export class TextingManagerApp extends HandlebarsApplicationMixin(ApplicationV2)
   /* -------------------------------------------- */
   /*  Actions                                      */
   /* -------------------------------------------- */
-
-  static #onSelectCrystal(_event, target) {
-    this.selectedCrystalId = target.value || null;
-    this.selectedContactId = null;
-    this.render();
-  }
-
-  static async #onToggleContact(_event, target) {
-    const contactId = target.dataset.contactId;
-    const current = new Set(getGrantedContacts(this.selectedCrystalId));
-    if (target.checked) current.add(contactId);
-    else current.delete(contactId);
-    await setGrantedContacts(this.selectedCrystalId, Array.from(current));
-    this.render();
-  }
-
-  static #onSelectContact(_event, target) {
-    this.selectedContactId = target.value || null;
-    this.render();
-  }
 
   static async #onSendAsContact(_event, _target) {
     const input = this.element.querySelector('[name="tmMessage"]');

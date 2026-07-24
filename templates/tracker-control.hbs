@@ -2,7 +2,7 @@
 
   <div class="hstl-tc-row">
     <label class="hstl-tc-label" for="hstl-tc-job-select">Job</label>
-    <select id="hstl-tc-job-select" class="hstl-tc-select" data-action="selectJob">
+    <select id="hstl-tc-job-select" class="hstl-tc-select">
       <option value="">— Custom / none —</option>
       {{#each jobs}}
       <option value="{{this.id}}" {{#if this.selected}}selected{{/if}}>{{this.title}}</option>

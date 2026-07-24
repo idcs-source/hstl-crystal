@@ -2,7 +2,7 @@
 
   <div class="tm-row">
     <label class="tm-label" for="tm-crystal-select">Crystal</label>
-    <select id="tm-crystal-select" class="tm-select" data-action="selectCrystal">
+    <select id="tm-crystal-select" class="tm-select">
       {{#each crystalOptions}}
       <option value="{{this.id}}" {{#if this.selected}}selected{{/if}}>{{this.name}}</option>
       {{/each}}
@@ -15,7 +15,7 @@
       <div class="tm-checklist">
         {{#each contactChecklist}}
         <label class="tm-checklist-row">
-          <input type="checkbox" class="tm-contact-checkbox" data-action="toggleContact" data-contact-id="{{this.id}}" {{#if this.granted}}checked{{/if}} />
+          <input type="checkbox" class="tm-contact-checkbox" data-contact-id="{{this.id}}" {{#if this.granted}}checked{{/if}} />
           <span>{{this.name}}</span>
         </label>
         {{/each}}
@@ -28,7 +28,7 @@
     <div class="tm-thread-col">
       <div class="tm-row">
         <label class="tm-label" for="tm-contact-select">Reply As</label>
-        <select id="tm-contact-select" class="tm-select" data-action="selectContact">
+        <select id="tm-contact-select" class="tm-select">
           <option value="">— Select a granted contact —</option>
           {{#each grantedContacts}}
           <option value="{{this.id}}" {{#if this.selected}}selected{{/if}}>{{this.name}}</option>

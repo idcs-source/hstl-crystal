@@ -30,7 +30,6 @@ export class TrackerControlApp extends HandlebarsApplicationMixin(ApplicationV2)
       height: 460
     },
     actions: {
-      selectJob: TrackerControlApp.#onSelectJob,
       cycleSlot: TrackerControlApp.#onCycleSlot,
       toggleActive: TrackerControlApp.#onToggleActive,
       resetSlots: TrackerControlApp.#onResetSlots
@@ -86,6 +85,20 @@ export class TrackerControlApp extends HandlebarsApplicationMixin(ApplicationV2)
   static #onSelectJob(_event, target) {
     this.selectedJobId = target.value || null;
     this.render();
+  }
+
+  /**
+   * Bound manually rather than through data-action, same reasoning as
+   * the Scry poster select and the Texting Manager's dropdowns — relying
+   * on data-action's "change" handling for a <select> proved unreliable
+   * here too.
+   */
+  _onFirstRender(context, options) {
+    super._onFirstRender(context, options);
+    this.element.addEventListener("change", (event) => {
+      if (!event.target.matches?.("#hstl-tc-job-select")) return;
+      TrackerControlApp.#onSelectJob.call(this, event, event.target);
+    });
   }
 
   static async #onCycleSlot(_event, target) {
