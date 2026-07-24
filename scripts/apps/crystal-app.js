@@ -6,11 +6,12 @@ import {
   deleteScryPost,
   submitReaction,
   adjustPhantomReaction,
-  submitReply
+  submitReply,
+  deleteReply
 } from "../scry.js";
 import { getJobs, submitJobUpdate, submitAcceptJob } from "../jobs.js";
-import { getBank, writeBank, formatGoldSilver, partsToSilver } from "../bank.js";
-import { getGrantedContacts, getThread, submitTextMessage } from "../texting.js";
+import { getBank, adjustBankField, formatGoldSilver, partsToSilver } from "../bank.js";
+import { getGrantedContacts, getThread, submitTextMessage, deleteMessage } from "../texting.js";
 
 const MODULE_ID = "hstl-crystal";
 const { ApplicationV2, HandlebarsApplicationMixin } = foundry.applications.api;
@@ -50,6 +51,7 @@ export class CrystalApp extends HandlebarsApplicationMixin(ApplicationV2) {
       goBackToList: CrystalApp.#onGoBackToList,
       postScry: CrystalApp.#onPostScry,
       deleteScry: CrystalApp.#onDeleteScry,
+      deleteReply: CrystalApp.#onDeleteReply,
       acceptJob: CrystalApp.#onAcceptJob,
       markComplete: CrystalApp.#onMarkComplete,
       reopenJob: CrystalApp.#onReopenJob,
@@ -68,7 +70,8 @@ export class CrystalApp extends HandlebarsApplicationMixin(ApplicationV2) {
       adjustBank: CrystalApp.#onAdjustBank,
       openContact: CrystalApp.#onOpenContact,
       goBackToTexting: CrystalApp.#onGoBackToTexting,
-      sendText: CrystalApp.#onSendText
+      sendText: CrystalApp.#onSendText,
+      deleteText: CrystalApp.#onDeleteText
     }
   };
 
@@ -505,6 +508,15 @@ export class CrystalApp extends HandlebarsApplicationMixin(ApplicationV2) {
     this.render();
   }
 
+  static async #onDeleteReply(_event, target) {
+    if (!game.user.isGM) return;
+    const postId = target.dataset.postId;
+    const replyId = target.dataset.replyId;
+    if (!postId || !replyId) return;
+    await deleteReply(postId, replyId);
+    this.render();
+  }
+
   static async #onAcceptJob(_event, target) {
     const jobId = target.dataset.jobId;
     const jobs = getJobs();
@@ -692,14 +704,7 @@ export class CrystalApp extends HandlebarsApplicationMixin(ApplicationV2) {
     const silverInput = this.element.querySelector(`#bank-adjust-${key}-silver`);
     const deltaSilver = partsToSilver(goldInput?.value, silverInput?.value);
 
-    const bank = getBank();
-    let next = bank[field] ?? 0;
-    if (mode === "add") next += deltaSilver;
-    else if (mode === "subtract") next -= deltaSilver;
-    else if (mode === "set") next = deltaSilver;
-    next = Math.max(0, next);
-
-    await writeBank({ [field]: next });
+    await adjustBankField(field, mode, deltaSilver);
     if (goldInput) goldInput.value = "";
     if (silverInput) silverInput.value = "";
     this.render();
@@ -727,6 +732,14 @@ export class CrystalApp extends HandlebarsApplicationMixin(ApplicationV2) {
     if (!text || !this.selectedCrystalId || !this.selectedContactId) return;
     await submitTextMessage(this.selectedCrystalId, this.selectedContactId, text);
     textarea.value = "";
+    this.render();
+  }
+
+  static async #onDeleteText(_event, target) {
+    if (!game.user.isGM) return;
+    const messageId = target.dataset.messageId;
+    if (!messageId || !this.selectedCrystalId || !this.selectedContactId) return;
+    await deleteMessage(this.selectedCrystalId, this.selectedContactId, messageId);
     this.render();
   }
 }

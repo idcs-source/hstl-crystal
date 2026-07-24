@@ -1,4 +1,4 @@
-import { getGrantedContacts, setGrantedContacts, getThread, appendMessage } from "../texting.js";
+import { getGrantedContacts, setGrantedContacts, getThread, appendMessage, deleteMessage } from "../texting.js";
 
 const MODULE_ID = "hstl-crystal";
 const { ApplicationV2, HandlebarsApplicationMixin } = foundry.applications.api;
@@ -29,7 +29,8 @@ export class TextingManagerApp extends HandlebarsApplicationMixin(ApplicationV2)
       height: 560
     },
     actions: {
-      sendAsContact: TextingManagerApp.#onSendAsContact
+      sendAsContact: TextingManagerApp.#onSendAsContact,
+      deleteMessage: TextingManagerApp.#onDeleteMessage
     }
   };
 
@@ -177,6 +178,13 @@ export class TextingManagerApp extends HandlebarsApplicationMixin(ApplicationV2)
     if (!text || !this.selectedCrystalId || !this.selectedContactId) return;
     await appendMessage(this.selectedCrystalId, this.selectedContactId, "contact", text);
     input.value = "";
+    this.render();
+  }
+
+  static async #onDeleteMessage(_event, target) {
+    const messageId = target.dataset.messageId;
+    if (!messageId || !this.selectedCrystalId || !this.selectedContactId) return;
+    await deleteMessage(this.selectedCrystalId, this.selectedContactId, messageId);
     this.render();
   }
 }

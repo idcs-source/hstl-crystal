@@ -1,3 +1,5 @@
+import { serialize } from "./utils.js";
+
 const MODULE_ID = "hstl-crystal";
 
 /** Five fresh, unmarked slots — the shape every activation resets to. */
@@ -14,11 +16,13 @@ export function getTracker() {
   };
 }
 
-export async function writeTracker(changes) {
-  const current = getTracker();
-  const next = { ...current, ...changes };
-  await game.settings.set(MODULE_ID, "activeTracker", next);
-  return next;
+export function writeTracker(changes) {
+  return serialize(async () => {
+    const current = getTracker();
+    const next = { ...current, ...changes };
+    await game.settings.set(MODULE_ID, "activeTracker", next);
+    return next;
+  });
 }
 
 /**

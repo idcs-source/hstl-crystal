@@ -44,6 +44,9 @@
             <div class="tm-bubble-text">{{this.text}}</div>
             <div class="tm-bubble-time">{{this.timeDisplay}}</div>
           </div>
+          <button type="button" class="tm-bubble-delete" data-action="deleteMessage" data-message-id="{{this.id}}" title="Delete message">
+            <i class="fa-solid fa-trash"></i>
+          </button>
         </div>
         {{/each}}
         {{#unless thread.length}}

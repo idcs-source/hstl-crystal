@@ -196,6 +196,11 @@
                   </div>
                   <div class="scry-reply-text">{{this.text}}</div>
                 </div>
+                {{#if ../../isGM}}
+                <button type="button" class="scry-reply-delete" data-action="deleteReply" data-post-id="{{../id}}" data-reply-id="{{this.id}}" title="Delete reply">
+                  <i class="fa-solid fa-trash"></i>
+                </button>
+                {{/if}}
               </div>
               {{/each}}
             </div>
@@ -361,6 +366,11 @@
             <div class="texting-bubble-text">{{this.text}}</div>
             <div class="texting-bubble-time">{{this.timeDisplay}}</div>
           </div>
+          {{#if ../isGM}}
+          <button type="button" class="texting-bubble-delete" data-action="deleteText" data-message-id="{{this.id}}" title="Delete message">
+            <i class="fa-solid fa-trash"></i>
+          </button>
+          {{/if}}
         </div>
         {{/each}}
         {{#unless thread.length}}

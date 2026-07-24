@@ -1,3 +1,5 @@
+import { serialize } from "./utils.js";
+
 const MODULE_ID = "hstl-crystal";
 
 /** Reads the current Scry feed from the world setting. */
@@ -8,12 +10,16 @@ export function getScryPosts() {
 /**
  * Writes a post directly to the world setting. Only succeeds for a GM
  * client, since world-scoped settings can only be persisted by the GM.
- * Non-GM callers should use submitScryPost instead.
+ * Non-GM callers should use submitScryPost instead. Wrapped in
+ * serialize() along with every other write below, so a like landing at
+ * the same moment as a new post can't silently erase one or the other.
  */
-export async function writeScryPost(post) {
-  const posts = getScryPosts();
-  posts.push(post);
-  await game.settings.set(MODULE_ID, "scryPosts", posts);
+export function writeScryPost(post) {
+  return serialize(async () => {
+    const posts = getScryPosts();
+    posts.push(post);
+    await game.settings.set(MODULE_ID, "scryPosts", posts);
+  });
 }
 
 /**
@@ -56,41 +62,44 @@ export function submitScryPost({ actorId, actorName, actorImg, text, imagePath }
  * Deletes a post by id. GM-only by design (no player-facing delete
  * action exists), so this always writes directly.
  */
-export async function deleteScryPost(postId) {
-  const posts = getScryPosts().filter(p => p.id !== postId);
-  await game.settings.set(MODULE_ID, "scryPosts", posts);
+export function deleteScryPost(postId) {
+  return serialize(async () => {
+    const posts = getScryPosts().filter(p => p.id !== postId);
+    await game.settings.set(MODULE_ID, "scryPosts", posts);
+  });
 }
 
 /**
  * Toggles a named reaction for one identity (a player's assigned
- * character, or their Foundry user id if they have none). Runs GM-side
- * so the read-modify-write against the latest data is atomic relative
- * to other reactions landing at the same moment. Reacting one way
- * clears any existing reaction the other way from the same identity,
- * and reacting the same way twice removes it — a normal toggle.
+ * character, or their Foundry user id if they have none). Reacting one
+ * way clears any existing reaction the other way from the same
+ * identity, and reacting the same way twice removes it — a normal
+ * toggle.
  */
-export async function applyReaction(postId, kind, reactorKey, reactorName) {
-  const posts = getScryPosts();
-  const idx = posts.findIndex(p => p.id === postId);
-  if (idx === -1) return;
+export function applyReaction(postId, kind, reactorKey, reactorName) {
+  return serialize(async () => {
+    const posts = getScryPosts();
+    const idx = posts.findIndex(p => p.id === postId);
+    if (idx === -1) return;
 
-  const post = {
-    ...posts[idx],
-    likes: { ...(posts[idx].likes ?? {}) },
-    dislikes: { ...(posts[idx].dislikes ?? {}) }
-  };
-  const target = kind === "like" ? "likes" : "dislikes";
-  const opposite = kind === "like" ? "dislikes" : "likes";
+    const post = {
+      ...posts[idx],
+      likes: { ...(posts[idx].likes ?? {}) },
+      dislikes: { ...(posts[idx].dislikes ?? {}) }
+    };
+    const target = kind === "like" ? "likes" : "dislikes";
+    const opposite = kind === "like" ? "dislikes" : "likes";
 
-  if (post[target][reactorKey]) {
-    delete post[target][reactorKey];
-  } else {
-    post[target][reactorKey] = reactorName;
-    delete post[opposite][reactorKey];
-  }
+    if (post[target][reactorKey]) {
+      delete post[target][reactorKey];
+    } else {
+      post[target][reactorKey] = reactorName;
+      delete post[opposite][reactorKey];
+    }
 
-  posts[idx] = post;
-  await game.settings.set(MODULE_ID, "scryPosts", posts);
+    posts[idx] = post;
+    await game.settings.set(MODULE_ID, "scryPosts", posts);
+  });
 }
 
 export function submitReaction(postId, kind, reactorKey, reactorName) {
@@ -107,23 +116,39 @@ export function submitReaction(postId, kind, reactorKey, reactorName) {
  * the GM's client ever exposes the control that calls it. Delta can be
  * negative to walk an overshoot back down; clamped at 0.
  */
-export async function adjustPhantomReaction(postId, kind, delta) {
-  const posts = getScryPosts();
-  const idx = posts.findIndex(p => p.id === postId);
-  if (idx === -1) return;
-  const field = kind === "like" ? "phantomLikes" : "phantomDislikes";
-  const current = posts[idx][field] ?? 0;
-  posts[idx] = { ...posts[idx], [field]: Math.max(0, current + delta) };
-  await game.settings.set(MODULE_ID, "scryPosts", posts);
+export function adjustPhantomReaction(postId, kind, delta) {
+  return serialize(async () => {
+    const posts = getScryPosts();
+    const idx = posts.findIndex(p => p.id === postId);
+    if (idx === -1) return;
+    const field = kind === "like" ? "phantomLikes" : "phantomDislikes";
+    const current = posts[idx][field] ?? 0;
+    posts[idx] = { ...posts[idx], [field]: Math.max(0, current + delta) };
+    await game.settings.set(MODULE_ID, "scryPosts", posts);
+  });
 }
 
-export async function appendReply(postId, reply) {
-  const posts = getScryPosts();
-  const idx = posts.findIndex(p => p.id === postId);
-  if (idx === -1) return;
-  const replies = [...(posts[idx].replies ?? []), reply];
-  posts[idx] = { ...posts[idx], replies };
-  await game.settings.set(MODULE_ID, "scryPosts", posts);
+export function appendReply(postId, reply) {
+  return serialize(async () => {
+    const posts = getScryPosts();
+    const idx = posts.findIndex(p => p.id === postId);
+    if (idx === -1) return;
+    const replies = [...(posts[idx].replies ?? []), reply];
+    posts[idx] = { ...posts[idx], replies };
+    await game.settings.set(MODULE_ID, "scryPosts", posts);
+  });
+}
+
+/** GM-only, no player-facing delete action exists for replies either. */
+export function deleteReply(postId, replyId) {
+  return serialize(async () => {
+    const posts = getScryPosts();
+    const idx = posts.findIndex(p => p.id === postId);
+    if (idx === -1) return;
+    const replies = (posts[idx].replies ?? []).filter(r => r.id !== replyId);
+    posts[idx] = { ...posts[idx], replies };
+    await game.settings.set(MODULE_ID, "scryPosts", posts);
+  });
 }
 
 export function submitReply(postId, { actorId, actorName, actorImg, text }) {

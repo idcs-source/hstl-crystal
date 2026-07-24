@@ -1,3 +1,5 @@
+import { serialize } from "./utils.js";
+
 const MODULE_ID = "hstl-crystal";
 
 /**
@@ -20,7 +22,7 @@ export function getTexting() {
   return game.settings.get(MODULE_ID, "texting") ?? { grants: {}, threads: {} };
 }
 
-export async function writeTexting(changes) {
+async function writeTexting(changes) {
   const current = getTexting();
   const next = { ...current, ...changes };
   await game.settings.set(MODULE_ID, "texting", next);
@@ -31,12 +33,18 @@ export function getGrantedContacts(crystalId) {
   return getTexting().grants?.[crystalId] ?? [];
 }
 
-/** GM-only in practice — only the Texting Manager ever calls this. */
-export async function setGrantedContacts(crystalId, contactIds) {
-  const texting = getTexting();
-  const grants = { ...(texting.grants ?? {}) };
-  grants[crystalId] = contactIds;
-  await writeTexting({ grants });
+/**
+ * GM-only in practice — only the Texting Manager ever calls this.
+ * Wrapped in serialize() so toggling a grant can never race a message
+ * being appended to that same crystal's threads at the same time.
+ */
+export function setGrantedContacts(crystalId, contactIds) {
+  return serialize(async () => {
+    const texting = getTexting();
+    const grants = { ...(texting.grants ?? {}) };
+    grants[crystalId] = contactIds;
+    await writeTexting({ grants });
+  });
 }
 
 export function getThread(crystalId, contactId) {
@@ -49,21 +57,44 @@ export function getThread(crystalId, contactId) {
  * directly), or "contact" for a message the GM sends as that contact
  * through the Texting Manager — that's the only distinction that
  * decides which side of the thread a bubble renders on.
+ *
+ * Wrapped in serialize() — this is the fix for messages disappearing
+ * when the phone and the Texting Manager both send around the same
+ * moment. See utils.js for why.
  */
-export async function appendMessage(crystalId, contactId, sender, text) {
-  const texting = getTexting();
-  const threads = { ...(texting.threads ?? {}) };
-  const crystalThreads = { ...(threads[crystalId] ?? {}) };
-  const thread = [...(crystalThreads[contactId] ?? [])];
-  thread.push({
-    id: foundry.utils.randomID(8),
-    sender,
-    text,
-    timestamp: Date.now()
+export function appendMessage(crystalId, contactId, sender, text) {
+  return serialize(async () => {
+    const texting = getTexting();
+    const threads = { ...(texting.threads ?? {}) };
+    const crystalThreads = { ...(threads[crystalId] ?? {}) };
+    const thread = [...(crystalThreads[contactId] ?? [])];
+    thread.push({
+      id: foundry.utils.randomID(8),
+      sender,
+      text,
+      timestamp: Date.now()
+    });
+    crystalThreads[contactId] = thread;
+    threads[crystalId] = crystalThreads;
+    await writeTexting({ threads });
   });
-  crystalThreads[contactId] = thread;
-  threads[crystalId] = crystalThreads;
-  await writeTexting({ threads });
+}
+
+/**
+ * GM-only. No player-facing delete action exists for messages — this is
+ * exposed from both the phone (when the GM is viewing a crystal
+ * directly) and the Texting Manager.
+ */
+export function deleteMessage(crystalId, contactId, messageId) {
+  return serialize(async () => {
+    const texting = getTexting();
+    const threads = { ...(texting.threads ?? {}) };
+    const crystalThreads = { ...(threads[crystalId] ?? {}) };
+    const thread = (crystalThreads[contactId] ?? []).filter(m => m.id !== messageId);
+    crystalThreads[contactId] = thread;
+    threads[crystalId] = crystalThreads;
+    await writeTexting({ threads });
+  });
 }
 
 /**

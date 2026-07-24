@@ -1,3 +1,5 @@
+import { serialize } from "./utils.js";
+
 const MODULE_ID = "hstl-crystal";
 
 /**
@@ -15,11 +17,33 @@ export function getBank() {
   };
 }
 
-export async function writeBank(changes) {
-  const current = getBank();
-  const next = { ...current, ...changes };
-  await game.settings.set(MODULE_ID, "bank", next);
-  return next;
+export function writeBank(changes) {
+  return serialize(async () => {
+    const current = getBank();
+    const next = { ...current, ...changes };
+    await game.settings.set(MODULE_ID, "bank", next);
+    return next;
+  });
+}
+
+/**
+ * Reads and writes a single field in one atomic step — this is what the
+ * Banking adjuster buttons call. Keeping the read inside the same
+ * serialize() turn as the write is what actually matters here: doing
+ * the read in the caller and only the write in here would still leave
+ * a gap for another write to land in between.
+ */
+export function adjustBankField(field, mode, deltaSilver) {
+  return serialize(async () => {
+    const current = getBank();
+    let next = current[field] ?? 0;
+    if (mode === "add") next += deltaSilver;
+    else if (mode === "subtract") next -= deltaSilver;
+    else if (mode === "set") next = deltaSilver;
+    next = Math.max(0, next);
+    await game.settings.set(MODULE_ID, "bank", { ...current, [field]: next });
+    return next;
+  });
 }
 
 /**

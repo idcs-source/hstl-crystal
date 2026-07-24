@@ -343,6 +343,24 @@
 .scry-reply {
   display: flex;
   gap: 6px;
+  align-items: flex-start;
+}
+
+.scry-reply-delete {
+  appearance: none;
+  -webkit-appearance: none;
+  background: none;
+  border: none;
+  color: #ff8fa0;
+  opacity: 0.5;
+  cursor: pointer;
+  font-size: 10px;
+  padding: 2px 4px;
+  flex-shrink: 0;
+}
+
+.scry-reply-delete:hover {
+  opacity: 1;
 }
 
 .scry-reply-avatar {
@@ -1260,6 +1278,8 @@
 
 .texting-bubble-row {
   display: flex;
+  align-items: center;
+  gap: 6px;
 }
 
 .texting-bubble-row-self {
@@ -1268,6 +1288,28 @@
 
 .texting-bubble-row-contact {
   justify-content: flex-start;
+}
+
+.texting-bubble-delete {
+  appearance: none;
+  -webkit-appearance: none;
+  background: none;
+  border: none;
+  color: #ff8fa0;
+  opacity: 0;
+  cursor: pointer;
+  font-size: 10px;
+  padding: 2px 4px;
+  flex-shrink: 0;
+  transition: opacity 0.15s ease;
+}
+
+.texting-bubble-row:hover .texting-bubble-delete {
+  opacity: 0.6;
+}
+
+.texting-bubble-delete:hover {
+  opacity: 1 !important;
 }
 
 .texting-bubble {
@@ -1422,6 +1464,30 @@
 
 .tm-bubble-row {
   display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.tm-bubble-delete {
+  appearance: none;
+  -webkit-appearance: none;
+  background: none;
+  border: none;
+  color: #ff8fa0;
+  opacity: 0;
+  cursor: pointer;
+  font-size: 10px;
+  padding: 2px 4px;
+  flex-shrink: 0;
+  transition: opacity 0.15s ease;
+}
+
+.tm-bubble-row:hover .tm-bubble-delete {
+  opacity: 0.6;
+}
+
+.tm-bubble-delete:hover {
+  opacity: 1 !important;
 }
 
 .tm-bubble-row-contact {
