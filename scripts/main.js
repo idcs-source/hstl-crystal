@@ -214,6 +214,7 @@ Hooks.once("ready", () => {
   // here and the GM's client performs the actual write. The tracker has
   // no player-facing controls today, but updateTracker is handled here
   // too so it's relay-safe if that ever changes.
+  console.log(`[HSTL] Registering socket relay listener for ${game.user.name} (isGM=${game.user.isGM})`);
   game.socket.on(`module.${MODULE_ID}`, async (data) => {
     console.log(`[HSTL] socket message received by ${game.user.name} (isGM=${game.user.isGM})`, data);
     if (!game.user.isGM) return;
