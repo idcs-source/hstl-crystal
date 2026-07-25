@@ -2,6 +2,7 @@ import { CrystalApp } from "./apps/crystal-app.js";
 import { JobManagerApp } from "./apps/job-manager-app.js";
 import { TrackerControlApp } from "./apps/tracker-control-app.js";
 import { TextingManagerApp } from "./apps/texting-manager-app.js";
+import { CrystalControlApp } from "./apps/crystal-control-app.js";
 import { TrackerBar } from "./apps/tracker-bar.js";
 import { writeScryPost, applyReaction, appendReply } from "./scry.js";
 import { writeJobUpdate, acceptJobIfOpen } from "./jobs.js";
@@ -111,6 +112,16 @@ Hooks.once("init", () => {
       grants: {},
       threads: {}
     }
+  });
+
+  // Which players (by Foundry User id) currently have a "broken"
+  // crystal — see breakage.js. GM-only to edit, via Crystal Control.
+  game.settings.register(MODULE_ID, "brokenCrystals", {
+    name: "HSTL Broken Crystals",
+    scope: "world",
+    config: false,
+    type: Object,
+    default: {}
   });
 
   console.log("HSTL Crystal | Initialized");
@@ -258,7 +269,8 @@ Hooks.on("updateSetting", (setting) => {
     `${MODULE_ID}.jobs`,
     `${MODULE_ID}.activeTracker`,
     `${MODULE_ID}.bank`,
-    `${MODULE_ID}.texting`
+    `${MODULE_ID}.texting`,
+    `${MODULE_ID}.brokenCrystals`
   ];
   if (!watched.includes(setting.key)) return;
 
@@ -273,6 +285,9 @@ Hooks.on("updateSetting", (setting) => {
   }
   if (setting.key === `${MODULE_ID}.texting` && TextingManagerApp.instance?.rendered) {
     TextingManagerApp.instance.render();
+  }
+  if (setting.key === `${MODULE_ID}.brokenCrystals` && CrystalControlApp.instance?.rendered) {
+    CrystalControlApp.instance.render();
   }
 });
 
@@ -319,6 +334,7 @@ Hooks.once("ready", () => {
     openCrystal,
     openJobManager: () => JobManagerApp.open(),
     openTrackerControl: () => TrackerControlApp.open(),
-    openTextingManager: () => TextingManagerApp.open()
+    openTextingManager: () => TextingManagerApp.open(),
+    openCrystalControl: () => CrystalControlApp.open()
   };
 });

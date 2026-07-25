@@ -1,6 +1,18 @@
 <div class="crystal-frame" style="background-image: url('{{frameImage}}');">
   <div class="crystal-screen">
 
+    {{!-- ===================== BROKEN ===================== --}}
+    {{#if (eq view "broken")}}
+    <div class="crystal-view crystal-broken">
+      <div class="crystal-broken-crack"></div>
+      <div class="crystal-broken-content">
+        <i class="fa-solid fa-bolt crystal-broken-icon"></i>
+        <div class="crystal-broken-title">CRYSTAL OFFLINE</div>
+        <div class="crystal-broken-sub">Physical damage detected.</div>
+      </div>
+    </div>
+    {{/if}}
+
     {{!-- ===================== HOME SCREEN ===================== --}}
     {{#if (eq view "home")}}
     <div class="crystal-view crystal-home" {{#if homeWallpaper}}style="background-image: url('{{homeWallpaper}}');"{{/if}}>

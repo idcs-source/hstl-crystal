@@ -1562,3 +1562,145 @@
   text-align: center;
   padding: 20px;
 }
+
+/* ---------------- Broken crystal ---------------- */
+
+.crystal-broken {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #0a0405;
+  overflow: hidden;
+}
+
+.crystal-broken-crack {
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(105deg, transparent 46%, rgba(255, 60, 60, 0.35) 47%, transparent 48%),
+    linear-gradient(60deg, transparent 30%, rgba(255, 60, 60, 0.25) 31%, transparent 32%),
+    linear-gradient(160deg, transparent 62%, rgba(255, 60, 60, 0.3) 63%, transparent 64%),
+    linear-gradient(20deg, transparent 75%, rgba(255, 60, 60, 0.2) 76%, transparent 77%),
+    linear-gradient(140deg, transparent 15%, rgba(255, 60, 60, 0.2) 16%, transparent 17%);
+  animation: hstl-crystal-flicker 3.5s infinite steps(1);
+}
+
+@keyframes hstl-crystal-flicker {
+  0%, 92%, 100% { opacity: 1; }
+  93% { opacity: 0.4; }
+  94% { opacity: 1; }
+  95% { opacity: 0.2; }
+  96% { opacity: 1; }
+}
+
+.crystal-broken-content {
+  position: relative;
+  z-index: 1;
+  text-align: center;
+  color: #ff8f8f;
+  padding: 24px;
+}
+
+.crystal-broken-icon {
+  font-size: 32px;
+  opacity: 0.8;
+  margin-bottom: 10px;
+  animation: hstl-crystal-flicker 3.5s infinite steps(1);
+}
+
+.crystal-broken-title {
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+}
+
+.crystal-broken-sub {
+  font-size: 11px;
+  opacity: 0.7;
+  margin-top: 6px;
+}
+
+/* ---------------- Crystal Control (GM window) ---------------- */
+
+.hstl-crystal-control .window-content {
+  background: #0e1424;
+  color: #e2e2e2;
+  padding: 12px;
+  overflow-y: auto;
+}
+
+.cc-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.cc-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: #151b2e;
+  border: 1px solid rgba(120, 255, 200, 0.15);
+  border-radius: 8px;
+  padding: 10px 12px;
+}
+
+.cc-row-broken {
+  border-color: rgba(255, 96, 96, 0.4);
+}
+
+.cc-row-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.cc-row-name {
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.cc-row-status {
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.cc-row-status-ok {
+  color: #8fffca;
+}
+
+.cc-row-status-broken {
+  color: #ff8f8f;
+}
+
+.cc-toggle {
+  appearance: none;
+  -webkit-appearance: none;
+  border-radius: 6px;
+  padding: 6px 12px;
+  font-size: 11px;
+  cursor: pointer;
+  border: 1px solid transparent;
+}
+
+.cc-toggle-break {
+  background: rgba(255, 96, 96, 0.15);
+  border-color: rgba(255, 96, 96, 0.4);
+  color: #ff8f8f;
+}
+
+.cc-toggle-break:hover {
+  background: rgba(255, 96, 96, 0.25);
+}
+
+.cc-toggle-restore {
+  background: rgba(31, 220, 160, 0.15);
+  border-color: rgba(31, 220, 160, 0.4);
+  color: #8fffca;
+}
+
+.cc-toggle-restore:hover {
+  background: rgba(31, 220, 160, 0.25);
+}

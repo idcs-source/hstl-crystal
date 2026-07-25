@@ -1,5 +1,6 @@
 import { JobManagerApp } from "./job-manager-app.js";
 import { TextingManagerApp } from "./texting-manager-app.js";
+import { CrystalControlApp } from "./crystal-control-app.js";
 import {
   getScryPosts,
   submitScryPost,
@@ -12,6 +13,7 @@ import {
 import { getJobs, submitJobUpdate, submitAcceptJob } from "../jobs.js";
 import { getBank, adjustBankField, formatGoldSilver, partsToSilver } from "../bank.js";
 import { getGrantedContacts, getThread, submitTextMessage, deleteMessage } from "../texting.js";
+import { getBrokenCrystals } from "../breakage.js";
 
 const MODULE_ID = "hstl-crystal";
 const { ApplicationV2, HandlebarsApplicationMixin } = foundry.applications.api;
@@ -236,9 +238,25 @@ export class CrystalApp extends HandlebarsApplicationMixin(ApplicationV2) {
   /* -------------------------------------------- */
 
   async _prepareContext(_options) {
+    const isGM = game.user.isGM;
+
+    // A broken crystal overrides everything else — no apps, no jobs,
+    // no composer, regardless of what view the player was last on.
+    // GMs are never affected by their own crystal being "broken" even
+    // in theory, since Crystal Control only ever lists non-GM users.
+    if (!isGM && getBrokenCrystals()[game.user.id] === true) {
+      return {
+        view: "broken",
+        isGM: false,
+        apps: [],
+        frameImage: game.settings.get(MODULE_ID, "frameImage"),
+        homeWallpaper: "",
+        hasCustomBackground: false
+      };
+    }
+
     const frameImage = game.settings.get(MODULE_ID, "frameImage");
     const homeWallpaper = game.settings.get(MODULE_ID, "homeWallpaper");
-    const isGM = game.user.isGM;
 
     const apps = [
       { id: "hstl", label: "HSTL", image: `modules/${MODULE_ID}/assets/hstl-icon.png` },
@@ -249,6 +267,7 @@ export class CrystalApp extends HandlebarsApplicationMixin(ApplicationV2) {
     if (isGM) {
       apps.push({ id: "job-manager", label: "Manage", icon: "fa-solid fa-gear" });
       apps.push({ id: "texting-manager", label: "Contacts", icon: "fa-solid fa-address-book" });
+      apps.push({ id: "crystal-control", label: "Crystals", icon: "fa-solid fa-bolt" });
     }
 
     const context = {
@@ -474,6 +493,8 @@ export class CrystalApp extends HandlebarsApplicationMixin(ApplicationV2) {
       this.render();
     } else if (appId === "texting-manager") {
       TextingManagerApp.open();
+    } else if (appId === "crystal-control") {
+      CrystalControlApp.open();
     } else if (appId === "job-manager") {
       JobManagerApp.open();
     }

@@ -1,0 +1,28 @@
+<div class="cc-body">
+  {{#if players.length}}
+  <div class="cc-list">
+    {{#each players}}
+    <div class="cc-row {{#if this.isBroken}}cc-row-broken{{/if}}">
+      <div class="cc-row-info">
+        <span class="cc-row-name">{{this.name}}</span>
+        <span class="cc-row-status {{#if this.isBroken}}cc-row-status-broken{{else}}cc-row-status-ok{{/if}}">
+          {{#if this.isBroken}}Broken{{else}}Working{{/if}}
+          {{#unless this.isActive}}· offline{{/unless}}
+        </span>
+      </div>
+      <button
+        type="button"
+        class="cc-toggle {{#if this.isBroken}}cc-toggle-restore{{else}}cc-toggle-break{{/if}}"
+        data-action="toggleBroken"
+        data-user-id="{{this.id}}"
+        data-broken="{{this.isBroken}}"
+      >
+        {{#if this.isBroken}}Restore{{else}}Break{{/if}}
+      </button>
+    </div>
+    {{/each}}
+  </div>
+  {{else}}
+  <p class="hstl-empty">No player users found in this world.</p>
+  {{/if}}
+</div>
