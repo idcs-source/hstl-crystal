@@ -1704,3 +1704,90 @@
 .cc-toggle-restore:hover {
   background: rgba(31, 220, 160, 0.25);
 }
+
+/* ---------------- Texting Manager: conversation import ---------------- */
+
+.tm-import {
+  margin-top: 10px;
+  border: 1px solid rgba(120, 255, 200, 0.15);
+  border-radius: 8px;
+  padding: 8px 10px;
+}
+
+.tm-import-summary {
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 700;
+  color: #8fffca;
+}
+
+.tm-import-hint {
+  font-size: 10px;
+  opacity: 0.65;
+  margin: 8px 0;
+  line-height: 1.4;
+}
+
+.tm-import-hint code {
+  background: #0e1424;
+  padding: 1px 4px;
+  border-radius: 3px;
+}
+
+.tm-import-input {
+  width: 100%;
+  box-sizing: border-box;
+  resize: vertical;
+  background: #131a2c;
+  color: #d8ffe9;
+  border: 1px solid rgba(120, 255, 200, 0.2);
+  border-radius: 6px;
+  padding: 6px 8px;
+  font-size: 11px;
+  font-family: monospace;
+}
+
+.tm-import-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 8px;
+  font-size: 11px;
+}
+
+.tm-import-spread-label,
+.tm-import-replace-label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.tm-import-spread-input {
+  width: 56px;
+  background: #131a2c;
+  color: #d8ffe9;
+  border: 1px solid rgba(120, 255, 200, 0.2);
+  border-radius: 4px;
+  padding: 3px 6px;
+  font-size: 11px;
+}
+
+.tm-import-btn {
+  appearance: none;
+  -webkit-appearance: none;
+  margin-top: 8px;
+  width: 100%;
+  border: 1px solid rgba(120, 255, 200, 0.3);
+  background: #1a2238;
+  color: #8fffca;
+  border-radius: 5px;
+  padding: 7px 10px;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.tm-import-btn:hover {
+  background: #22304f;
+}

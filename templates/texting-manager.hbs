@@ -60,6 +60,26 @@
           <i class="fa-solid fa-paper-plane"></i>
         </button>
       </div>
+
+      <details class="tm-import">
+        <summary class="tm-import-summary">Import Conversation</summary>
+        <p class="tm-import-hint">One message per line: <code>Crystal: text</code> or <code>Contact: text</code>. Anything else (blank lines, headers) is skipped.</p>
+        <textarea name="tmImportScript" class="tm-import-input" rows="6" placeholder="Crystal: hey, is this the right number?&#10;Contact: Who told you to text this."></textarea>
+        <div class="tm-import-row">
+          <label class="tm-import-spread-label">
+            Spread over last
+            <input type="number" name="tmImportSpreadDays" class="tm-import-spread-input" min="0" value="0" />
+            days (0 = all at once)
+          </label>
+          <label class="tm-import-replace-label">
+            <input type="checkbox" name="tmImportReplace" />
+            Replace existing thread
+          </label>
+        </div>
+        <button type="button" class="tm-import-btn" data-action="importConversation">
+          <i class="fa-solid fa-file-import"></i> Import
+        </button>
+      </details>
       {{else}}
       <p class="hstl-empty tm-thread-placeholder">Select a granted contact above to view or reply to that thread.</p>
       {{/if}}

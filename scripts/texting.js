@@ -102,6 +102,92 @@ export function appendMessage(senderId, otherPartyId, text) {
   });
 }
 
+/**
+ * Parses a pasted script into an ordered list of messages. Expected
+ * format, one message per line:
+ *   Crystal: message text
+ *   Contact: message text
+ * Blank lines, headers, or anything else that doesn't start with one
+ * of those two labels is skipped, so a script with day headers or
+ * blank lines between exchanges can be pasted in as-is without needing
+ * to be cleaned up by hand first.
+ */
+function parseImportScript(raw) {
+  const parsed = [];
+  for (const line of raw.split("\n")) {
+    const match = line.match(/^\s*(crystal|contact)\s*:\s*(.+)$/i);
+    if (!match) continue;
+    const text = match[2].trim();
+    if (!text) continue;
+    parsed.push({ sender: match[1].toLowerCase() === "crystal" ? "self" : "contact", text });
+  }
+  return parsed;
+}
+
+/**
+ * Spreads `count` timestamps across the last `spreadDays` days, ending
+ * at "now", in increasing order with a little jitter so a long
+ * imported history doesn't look mechanically evenly-spaced. spreadDays
+ * of 0 (or omitted) just stamps everything with the current time.
+ */
+function generateSpreadTimestamps(count, spreadDays) {
+  const now = Date.now();
+  if (!spreadDays || spreadDays <= 0 || count <= 1) {
+    return new Array(count).fill(now);
+  }
+  const totalMs = spreadDays * 24 * 60 * 60 * 1000;
+  const start = now - totalMs;
+  const stamps = [];
+  for (let i = 0; i < count; i++) {
+    const base = start + (totalMs * i) / (count - 1);
+    const jitter = (Math.random() - 0.5) * (totalMs / count) * 0.5;
+    stamps.push(Math.round(Math.min(now, Math.max(start, base + jitter))));
+  }
+  return stamps.sort((a, b) => a - b);
+}
+
+/**
+ * Bulk-imports a whole conversation in one shot instead of sending each
+ * line through the composer individually. GM-only, called from the
+ * Texting Manager. Appends onto the existing thread by default;
+ * `replace: true` clears it first. Auto-grants both directions the
+ * same way a normal appendMessage does, so the conversation is visible
+ * immediately once a player actually gets access to that crystal.
+ */
+export function importConversation(crystalId, contactId, rawScript, { spreadDays = 0, replace = false } = {}) {
+  return serialize(async () => {
+    const parsed = parseImportScript(rawScript);
+    if (parsed.length === 0) return { count: 0 };
+
+    const timestamps = generateSpreadTimestamps(parsed.length, spreadDays);
+
+    const texting = getTexting();
+    const threads = { ...(texting.threads ?? {}) };
+    const key = pairKey(crystalId, contactId);
+    const existing = replace ? [] : [...(threads[key] ?? [])];
+
+    const newMessages = parsed.map((m, i) => ({
+      id: foundry.utils.randomID(8),
+      senderId: m.sender === "self" ? crystalId : contactId,
+      text: m.text,
+      timestamp: timestamps[i]
+    }));
+
+    threads[key] = [...existing, ...newMessages];
+
+    const grants = { ...(texting.grants ?? {}) };
+    if (!(grants[crystalId] ?? []).includes(contactId)) {
+      grants[crystalId] = [...(grants[crystalId] ?? []), contactId];
+    }
+    if (!(grants[contactId] ?? []).includes(crystalId)) {
+      grants[contactId] = [...(grants[contactId] ?? []), crystalId];
+    }
+
+    await writeTexting({ threads, grants });
+    return { count: newMessages.length };
+  });
+}
+
 /** GM-only. Exposed from both the phone and the Texting Manager. */
 export function deleteMessage(crystalId, contactId, messageId) {
   return serialize(async () => {

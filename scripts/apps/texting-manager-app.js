@@ -1,4 +1,4 @@
-import { getGrantedContacts, setGrantedContacts, getThread, appendMessage, deleteMessage } from "../texting.js";
+import { getGrantedContacts, setGrantedContacts, getThread, appendMessage, deleteMessage, importConversation } from "../texting.js";
 
 const MODULE_ID = "hstl-crystal";
 const { ApplicationV2, HandlebarsApplicationMixin } = foundry.applications.api;
@@ -26,11 +26,12 @@ export class TextingManagerApp extends HandlebarsApplicationMixin(ApplicationV2)
     },
     position: {
       width: 520,
-      height: 560
+      height: 680
     },
     actions: {
       sendAsContact: TextingManagerApp.#onSendAsContact,
-      deleteMessage: TextingManagerApp.#onDeleteMessage
+      deleteMessage: TextingManagerApp.#onDeleteMessage,
+      importConversation: TextingManagerApp.#onImportConversation
     }
   };
 
@@ -201,6 +202,30 @@ export class TextingManagerApp extends HandlebarsApplicationMixin(ApplicationV2)
     const messageId = target.dataset.messageId;
     if (!messageId || !this.selectedCrystalId || !this.selectedContactId) return;
     await deleteMessage(this.selectedCrystalId, this.selectedContactId, messageId);
+    this.render();
+  }
+
+  static async #onImportConversation(_event, _target) {
+    if (!this.selectedCrystalId || !this.selectedContactId) {
+      ui.notifications.warn("Select a crystal and a granted contact before importing.");
+      return;
+    }
+    const scriptInput = this.element.querySelector('[name="tmImportScript"]');
+    const raw = scriptInput?.value ?? "";
+    if (!raw.trim()) return;
+
+    const spreadDaysInput = this.element.querySelector('[name="tmImportSpreadDays"]');
+    const spreadDays = Number(spreadDaysInput?.value) || 0;
+    const replaceCheckbox = this.element.querySelector('[name="tmImportReplace"]');
+    const replace = !!replaceCheckbox?.checked;
+
+    const { count } = await importConversation(this.selectedCrystalId, this.selectedContactId, raw, { spreadDays, replace });
+    if (count === 0) {
+      ui.notifications.warn('No valid lines found — each line needs to start with "Crystal:" or "Contact:".');
+      return;
+    }
+    scriptInput.value = "";
+    ui.notifications.info(`Imported ${count} message${count === 1 ? "" : "s"}.`);
     this.render();
   }
 }
