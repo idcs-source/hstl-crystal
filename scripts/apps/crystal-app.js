@@ -856,6 +856,7 @@ export class CrystalApp extends HandlebarsApplicationMixin(ApplicationV2) {
    * anything whose Actor still exists.
    */
   static async #onRemoveContact(_event, _target) {
+    console.log(`[HSTL] Remove Contact clicked — selectedCrystalId=${this.selectedCrystalId}, selectedContactId=${this.selectedContactId}`);
     if (!this.selectedCrystalId || !this.selectedContactId) return;
     await submitRemoveDeadContact(this.selectedCrystalId, this.selectedContactId);
     this.view = "texting-inbox";

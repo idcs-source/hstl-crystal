@@ -302,17 +302,29 @@ export function importConversation(crystalId, contactId, rawScript, { spreadDays
  * conversation" tool.
  */
 export function removeDeadContact(crystalId, contactId) {
+  console.log(`[HSTL] removeDeadContact called — crystalId=${crystalId}, contactId=${contactId}`);
   return serialize(async () => {
-    if (game.actors.get(contactId)) return;
+    const existingActor = game.actors.get(contactId);
+    console.log(`[HSTL] removeDeadContact — game.actors.get(contactId) =`, existingActor);
+    if (existingActor) {
+      console.log("[HSTL] removeDeadContact — aborting, contact's Actor still exists");
+      return;
+    }
 
     const texting = getTexting();
+    console.log("[HSTL] removeDeadContact — grants before:", JSON.stringify(texting.grants?.[crystalId]));
+
     const grants = { ...(texting.grants ?? {}) };
     grants[crystalId] = (grants[crystalId] ?? []).filter(id => id !== contactId);
+    console.log("[HSTL] removeDeadContact — grants after filter:", JSON.stringify(grants[crystalId]));
 
     const threads = { ...(texting.threads ?? {}) };
-    delete threads[pairKey(crystalId, contactId)];
+    const key = pairKey(crystalId, contactId);
+    delete threads[key];
+    console.log(`[HSTL] removeDeadContact — deleted thread key ${key}, still present after delete:`, key in threads);
 
-    await writeTexting({ grants, threads });
+    const result = await writeTexting({ grants, threads });
+    console.log("[HSTL] removeDeadContact — write complete, grants now:", JSON.stringify(result.grants?.[crystalId]));
   });
 }
 
@@ -321,6 +333,7 @@ export function removeDeadContact(crystalId, contactId) {
  * player-originated write does.
  */
 export function submitRemoveDeadContact(crystalId, contactId) {
+  console.log(`[HSTL] submitRemoveDeadContact — isGM=${game.user.isGM}, user=${game.user.name}, crystalId=${crystalId}, contactId=${contactId}`);
   if (game.user.isGM) {
     return removeDeadContact(crystalId, contactId);
   }
