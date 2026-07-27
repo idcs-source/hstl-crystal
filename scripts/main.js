@@ -8,7 +8,7 @@ import { writeScryPost, applyReaction, appendReply } from "./scry.js";
 import { writeJobUpdate, acceptJobIfOpen } from "./jobs.js";
 import { writeTracker } from "./tracker.js";
 import { writeBank } from "./bank.js";
-import { appendMessage, markThreadRead, getUnreadThreads, getUnreadForCrystal } from "./texting.js";
+import { appendMessage, markThreadRead, getUnreadThreads, getUnreadForCrystal, removeDeadContact } from "./texting.js";
 
 const MODULE_ID = "hstl-crystal";
 
@@ -264,6 +264,8 @@ Hooks.once("ready", () => {
       await appendMessage(data.crystalId, data.contactId, data.text);
     } else if (data?.type === "markThreadRead" && data.crystalId && data.contactId) {
       await markThreadRead(data.crystalId, data.contactId, data.viewerKey);
+    } else if (data?.type === "removeDeadContact" && data.crystalId && data.contactId) {
+      await removeDeadContact(data.crystalId, data.contactId);
     } else {
       console.warn("[HSTL] socket message did not match any known type/shape — nothing was written", data);
     }

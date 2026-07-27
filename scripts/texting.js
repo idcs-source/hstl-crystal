@@ -289,6 +289,45 @@ export function importConversation(crystalId, contactId, rawScript, { spreadDays
   });
 }
 
+/**
+ * Removes a contact from a crystal's grant list and deletes that
+ * thread's messages outright — scoped specifically to cleaning up a
+ * conversation whose other participant's Actor has been deleted. There
+ * was previously no way to get rid of one of these: the grant checklist
+ * only ever lists Actors that still exist, so a dead one's grant was
+ * unreachable through it, and a normal delete-message action only
+ * clears individual messages, not the whole orphaned thread. The
+ * existence check happens here too, not just in whatever UI calls
+ * this, so it can't be repurposed into a general "delete any
+ * conversation" tool.
+ */
+export function removeDeadContact(crystalId, contactId) {
+  return serialize(async () => {
+    if (game.actors.get(contactId)) return;
+
+    const texting = getTexting();
+    const grants = { ...(texting.grants ?? {}) };
+    grants[crystalId] = (grants[crystalId] ?? []).filter(id => id !== contactId);
+
+    const threads = { ...(texting.threads ?? {}) };
+    delete threads[pairKey(crystalId, contactId)];
+
+    await writeTexting({ grants, threads });
+  });
+}
+
+/**
+ * Player-facing version — relays to the GM the same way every other
+ * player-originated write does.
+ */
+export function submitRemoveDeadContact(crystalId, contactId) {
+  if (game.user.isGM) {
+    return removeDeadContact(crystalId, contactId);
+  }
+  game.socket.emit(`module.${MODULE_ID}`, { type: "removeDeadContact", crystalId, contactId });
+  return Promise.resolve();
+}
+
 /** GM-only. Exposed from both the phone and the Texting Manager. */
 export function deleteMessage(crystalId, contactId, messageId) {
   return serialize(async () => {

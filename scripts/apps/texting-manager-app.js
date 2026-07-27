@@ -6,7 +6,8 @@ import {
   deleteMessage,
   importConversation,
   markThreadRead,
-  getUnreadThreads
+  getUnreadThreads,
+  removeDeadContact
 } from "../texting.js";
 
 const MODULE_ID = "hstl-crystal";
@@ -41,7 +42,8 @@ export class TextingManagerApp extends HandlebarsApplicationMixin(ApplicationV2)
       sendAsContact: TextingManagerApp.#onSendAsContact,
       deleteMessage: TextingManagerApp.#onDeleteMessage,
       importConversation: TextingManagerApp.#onImportConversation,
-      jumpToThread: TextingManagerApp.#onJumpToThread
+      jumpToThread: TextingManagerApp.#onJumpToThread,
+      removeDeadContact: TextingManagerApp.#onRemoveDeadContact
     }
   };
 
@@ -211,9 +213,11 @@ export class TextingManagerApp extends HandlebarsApplicationMixin(ApplicationV2)
 
     let thread = [];
     let activeContactName = null;
+    let contactExists = true;
     if (this.selectedContactId) {
       const contact = game.actors.get(this.selectedContactId);
-      activeContactName = contact?.name ?? "Unknown";
+      contactExists = !!contact;
+      activeContactName = contact?.name ?? `Deleted Contact (${this.selectedContactId})`;
       thread = getThread(this.selectedCrystalId, this.selectedContactId).map(m => ({
         ...m,
         timeDisplay: new Date(m.timestamp).toLocaleString(),
@@ -234,6 +238,7 @@ export class TextingManagerApp extends HandlebarsApplicationMixin(ApplicationV2)
         .map(a => ({ id: a.id, name: a.name, selected: a.id === this.selectedContactId })),
       selectedContactId: this.selectedContactId,
       activeContactName,
+      contactExists,
       thread
     };
   }
@@ -263,6 +268,19 @@ export class TextingManagerApp extends HandlebarsApplicationMixin(ApplicationV2)
     const messageId = target.dataset.messageId;
     if (!messageId || !this.selectedCrystalId || !this.selectedContactId) return;
     await deleteMessage(this.selectedCrystalId, this.selectedContactId, messageId);
+    this.render();
+  }
+
+  /**
+   * Cleans up a thread whose contact no longer exists — the grant
+   * checklist can never surface this on its own, since it only lists
+   * Actors that still exist, so this is the only way to actually get
+   * rid of one.
+   */
+  static async #onRemoveDeadContact(_event, _target) {
+    if (!this.selectedCrystalId || !this.selectedContactId) return;
+    await removeDeadContact(this.selectedCrystalId, this.selectedContactId);
+    this.selectedContactId = null;
     this.render();
   }
 

@@ -1886,3 +1886,65 @@
 .tm-import-btn:hover {
   background: #22304f;
 }
+
+/* ---------------- Dead contact cleanup banner ---------------- */
+
+.texting-dead-contact-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  background: rgba(255, 96, 96, 0.1);
+  border-bottom: 1px solid rgba(255, 96, 96, 0.3);
+  padding: 8px 12px;
+  font-size: 11px;
+  color: #ff8f8f;
+}
+
+.texting-dead-contact-remove {
+  appearance: none;
+  -webkit-appearance: none;
+  border: 1px solid rgba(255, 96, 96, 0.4);
+  background: rgba(255, 96, 96, 0.15);
+  color: #ff8f8f;
+  border-radius: 6px;
+  padding: 4px 10px;
+  font-size: 11px;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.texting-dead-contact-remove:hover {
+  background: rgba(255, 96, 96, 0.25);
+}
+
+.tm-dead-contact-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  background: rgba(255, 96, 96, 0.1);
+  border: 1px solid rgba(255, 96, 96, 0.3);
+  border-radius: 6px;
+  padding: 6px 10px;
+  margin-bottom: 8px;
+  font-size: 11px;
+  color: #ff8f8f;
+}
+
+.tm-dead-contact-remove {
+  appearance: none;
+  -webkit-appearance: none;
+  border: 1px solid rgba(255, 96, 96, 0.4);
+  background: rgba(255, 96, 96, 0.15);
+  color: #ff8f8f;
+  border-radius: 6px;
+  padding: 4px 10px;
+  font-size: 11px;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.tm-dead-contact-remove:hover {
+  background: rgba(255, 96, 96, 0.25);
+}

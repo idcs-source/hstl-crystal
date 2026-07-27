@@ -51,6 +51,14 @@
       </div>
 
       {{#if selectedContactId}}
+      {{#unless contactExists}}
+      <div class="tm-dead-contact-banner">
+        <span>This contact's Actor no longer exists.</span>
+        <button type="button" class="tm-dead-contact-remove" data-action="removeDeadContact">
+          <i class="fa-solid fa-trash"></i> Remove
+        </button>
+      </div>
+      {{/unless}}
       <div class="tm-thread-scroll">
         {{#each thread}}
         <div class="tm-bubble-row {{#if this.fromContact}}tm-bubble-row-contact{{else}}tm-bubble-row-self{{/if}}">

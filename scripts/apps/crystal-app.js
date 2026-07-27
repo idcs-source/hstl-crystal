@@ -12,7 +12,7 @@ import {
 } from "../scry.js";
 import { getJobs, submitJobUpdate, submitAcceptJob } from "../jobs.js";
 import { getBank, adjustBankField, formatGoldSilver, partsToSilver } from "../bank.js";
-import { getGrantedContacts, getThread, submitTextMessage, deleteMessage, getUnreadThreads, getUnreadForCrystal, submitMarkThreadRead } from "../texting.js";
+import { getGrantedContacts, getThread, submitTextMessage, deleteMessage, getUnreadThreads, getUnreadForCrystal, submitMarkThreadRead, submitRemoveDeadContact } from "../texting.js";
 import { getBrokenCrystals } from "../breakage.js";
 
 const MODULE_ID = "hstl-crystal";
@@ -73,7 +73,8 @@ export class CrystalApp extends HandlebarsApplicationMixin(ApplicationV2) {
       openContact: CrystalApp.#onOpenContact,
       goBackToTexting: CrystalApp.#onGoBackToTexting,
       sendText: CrystalApp.#onSendText,
-      deleteText: CrystalApp.#onDeleteText
+      deleteText: CrystalApp.#onDeleteText,
+      removeContact: CrystalApp.#onRemoveContact
     }
   };
 
@@ -434,7 +435,8 @@ export class CrystalApp extends HandlebarsApplicationMixin(ApplicationV2) {
 
       if (this.view === "texting-thread") {
         const contact = this.selectedContactId ? game.actors.get(this.selectedContactId) : null;
-        context.activeContactName = contact?.name ?? "Unknown";
+        context.activeContactName = contact?.name ?? `Deleted Contact (${this.selectedContactId})`;
+        context.contactExists = !!contact;
         const thread = (this.selectedCrystalId && this.selectedContactId)
           ? getThread(this.selectedCrystalId, this.selectedContactId)
           : [];
@@ -844,6 +846,20 @@ export class CrystalApp extends HandlebarsApplicationMixin(ApplicationV2) {
     const messageId = target.dataset.messageId;
     if (!messageId || !this.selectedCrystalId || !this.selectedContactId) return;
     await deleteMessage(this.selectedCrystalId, this.selectedContactId, messageId);
+    this.render();
+  }
+
+  /**
+   * Not GM-gated — anyone looking at their own crystal's contact list
+   * should be able to clean up a dead entry on it. Safe regardless of
+   * who calls it, since removeDeadContact itself refuses to act on
+   * anything whose Actor still exists.
+   */
+  static async #onRemoveContact(_event, _target) {
+    if (!this.selectedCrystalId || !this.selectedContactId) return;
+    await submitRemoveDeadContact(this.selectedCrystalId, this.selectedContactId);
+    this.view = "texting-inbox";
+    this.selectedContactId = null;
     this.render();
   }
 }

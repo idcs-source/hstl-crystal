@@ -377,6 +377,15 @@
         <span class="hstl-header-spacer"></span>
       </div>
 
+      {{#unless contactExists}}
+      <div class="texting-dead-contact-banner">
+        <span>This contact no longer exists.</span>
+        <button type="button" class="texting-dead-contact-remove" data-action="removeContact">
+          <i class="fa-solid fa-trash"></i> Remove
+        </button>
+      </div>
+      {{/unless}}
+
       <div class="texting-thread-scroll">
         {{#each thread}}
         <div class="texting-bubble-row {{#if this.fromSelf}}texting-bubble-row-self{{else}}texting-bubble-row-contact{{/if}}">
