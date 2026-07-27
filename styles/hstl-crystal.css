@@ -144,6 +144,12 @@
   font-family: inherit;
 }
 
+.crystal-icon-badge-wrap {
+  position: relative;
+  display: inline-flex;
+  flex-shrink: 0;
+}
+
 .crystal-icon-glyph {
   width: 52px;
   height: 52px;

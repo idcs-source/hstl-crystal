@@ -29,12 +29,14 @@
       <div class="crystal-app-grid">
         {{#each apps}}
         <div role="button" tabindex="0" class="crystal-app-icon" data-action="openApp" data-app-id="{{this.id}}">
-          <span class="crystal-icon-glyph">
-            {{#if this.image}}
-            <img src="{{this.image}}" class="crystal-icon-img" alt="{{this.label}}" />
-            {{else}}
-            <i class="{{this.icon}}"></i>
-            {{/if}}
+          <span class="crystal-icon-badge-wrap">
+            <span class="crystal-icon-glyph">
+              {{#if this.image}}
+              <img src="{{this.image}}" class="crystal-icon-img" alt="{{this.label}}" />
+              {{else}}
+              <i class="{{this.icon}}"></i>
+              {{/if}}
+            </span>
             {{#if this.badge}}
             <span class="crystal-icon-badge">{{this.badge}}</span>
             {{/if}}

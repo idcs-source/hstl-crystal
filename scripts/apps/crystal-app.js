@@ -259,10 +259,9 @@ export class CrystalApp extends HandlebarsApplicationMixin(ApplicationV2) {
     const homeWallpaper = game.settings.get(MODULE_ID, "homeWallpaper");
 
     const myOwnedCrystals = (game.actors?.contents ?? []).filter(a => a.isOwner);
-    const textsBadge = myOwnedCrystals.reduce(
-      (total, a) => total + Object.keys(getUnreadForCrystal(a.id)).length,
-      0
-    );
+    const textsBadge = isGM
+      ? 0
+      : myOwnedCrystals.reduce((total, a) => total + Object.keys(getUnreadForCrystal(a.id)).length, 0);
 
     const apps = [
       { id: "hstl", label: "HSTL", image: `modules/${MODULE_ID}/assets/hstl-icon.png` },
@@ -766,6 +765,13 @@ export class CrystalApp extends HandlebarsApplicationMixin(ApplicationV2) {
     this.view = "texting-thread";
     if (this.selectedCrystalId && this.selectedContactId) {
       await submitMarkThreadRead(this.selectedCrystalId, this.selectedContactId, this.selectedCrystalId);
+      // The GM's own Needs Reply tracking is a separate marker from any
+      // one crystal's — without this, testing or reading a thread via
+      // the phone would never clear the badge on the Contacts icon,
+      // only actually opening it through the Manager would.
+      if (game.user.isGM) {
+        await submitMarkThreadRead(this.selectedCrystalId, this.selectedContactId, "__gm__");
+      }
     }
     this.render();
   }
@@ -782,6 +788,9 @@ export class CrystalApp extends HandlebarsApplicationMixin(ApplicationV2) {
     if (!text || !this.selectedCrystalId || !this.selectedContactId) return;
     await submitTextMessage(this.selectedCrystalId, this.selectedContactId, text);
     await submitMarkThreadRead(this.selectedCrystalId, this.selectedContactId, this.selectedCrystalId);
+    if (game.user.isGM) {
+      await submitMarkThreadRead(this.selectedCrystalId, this.selectedContactId, "__gm__");
+    }
     textarea.value = "";
     this.render();
   }
