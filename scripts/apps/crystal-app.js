@@ -12,7 +12,7 @@ import {
 } from "../scry.js";
 import { getJobs, submitJobUpdate, submitAcceptJob } from "../jobs.js";
 import { getBank, adjustBankField, formatGoldSilver, partsToSilver } from "../bank.js";
-import { getGrantedContacts, getThread, submitTextMessage, deleteMessage } from "../texting.js";
+import { getGrantedContacts, getThread, submitTextMessage, deleteMessage, getUnreadThreads, getUnreadForCrystal, submitMarkThreadRead } from "../texting.js";
 import { getBrokenCrystals } from "../breakage.js";
 
 const MODULE_ID = "hstl-crystal";
@@ -258,15 +258,27 @@ export class CrystalApp extends HandlebarsApplicationMixin(ApplicationV2) {
     const frameImage = game.settings.get(MODULE_ID, "frameImage");
     const homeWallpaper = game.settings.get(MODULE_ID, "homeWallpaper");
 
+    const myOwnedCrystals = (game.actors?.contents ?? []).filter(a => a.isOwner);
+    const textsBadge = myOwnedCrystals.reduce(
+      (total, a) => total + Object.keys(getUnreadForCrystal(a.id)).length,
+      0
+    );
+
     const apps = [
       { id: "hstl", label: "HSTL", image: `modules/${MODULE_ID}/assets/hstl-icon.png` },
       { id: "scry", label: "Scry", image: `modules/${MODULE_ID}/assets/scry-icon.png` },
       { id: "banking", label: "Banking", image: `modules/${MODULE_ID}/assets/banking-icon.png` },
-      { id: "texting", label: "Texts", icon: "fa-solid fa-comment-sms" }
+      { id: "texting", label: "Texts", icon: "fa-solid fa-comment-sms", badge: textsBadge > 0 ? textsBadge : null }
     ];
     if (isGM) {
       apps.push({ id: "job-manager", label: "Manage", icon: "fa-solid fa-gear" });
-      apps.push({ id: "texting-manager", label: "Contacts", icon: "fa-solid fa-address-book" });
+      const unreadCount = getUnreadThreads().length;
+      apps.push({
+        id: "texting-manager",
+        label: "Contacts",
+        icon: "fa-solid fa-address-book",
+        badge: unreadCount > 0 ? unreadCount : null
+      });
       apps.push({ id: "crystal-control", label: "Crystals", icon: "fa-solid fa-bolt" });
     }
 
@@ -372,10 +384,11 @@ export class CrystalApp extends HandlebarsApplicationMixin(ApplicationV2) {
       }));
 
       const grantedIds = this.selectedCrystalId ? getGrantedContacts(this.selectedCrystalId) : [];
+      const unreadByContact = this.selectedCrystalId ? getUnreadForCrystal(this.selectedCrystalId) : {};
       context.contacts = grantedIds
         .map(id => game.actors.get(id))
         .filter(Boolean)
-        .map(a => ({ id: a.id, name: a.name }));
+        .map(a => ({ id: a.id, name: a.name, unreadCount: unreadByContact[a.id] ?? 0 }));
 
       if (this.view === "texting-thread") {
         const contact = this.selectedContactId ? game.actors.get(this.selectedContactId) : null;
@@ -748,9 +761,12 @@ export class CrystalApp extends HandlebarsApplicationMixin(ApplicationV2) {
   /*  Texting                                      */
   /* -------------------------------------------- */
 
-  static #onOpenContact(_event, target) {
+  static async #onOpenContact(_event, target) {
     this.selectedContactId = target.dataset.contactId;
     this.view = "texting-thread";
+    if (this.selectedCrystalId && this.selectedContactId) {
+      await submitMarkThreadRead(this.selectedCrystalId, this.selectedContactId, this.selectedCrystalId);
+    }
     this.render();
   }
 
@@ -765,6 +781,7 @@ export class CrystalApp extends HandlebarsApplicationMixin(ApplicationV2) {
     const text = textarea?.value?.trim();
     if (!text || !this.selectedCrystalId || !this.selectedContactId) return;
     await submitTextMessage(this.selectedCrystalId, this.selectedContactId, text);
+    await submitMarkThreadRead(this.selectedCrystalId, this.selectedContactId, this.selectedCrystalId);
     textarea.value = "";
     this.render();
   }

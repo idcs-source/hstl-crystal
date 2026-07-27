@@ -8,7 +8,7 @@ import { writeScryPost, applyReaction, appendReply } from "./scry.js";
 import { writeJobUpdate, acceptJobIfOpen } from "./jobs.js";
 import { writeTracker } from "./tracker.js";
 import { writeBank } from "./bank.js";
-import { appendMessage } from "./texting.js";
+import { appendMessage, markThreadRead, getUnreadThreads, getUnreadForCrystal } from "./texting.js";
 
 const MODULE_ID = "hstl-crystal";
 
@@ -110,7 +110,8 @@ Hooks.once("init", () => {
     type: Object,
     default: {
       grants: {},
-      threads: {}
+      threads: {},
+      reads: {}
     }
   });
 
@@ -122,6 +123,21 @@ Hooks.once("init", () => {
     config: false,
     type: Object,
     default: {}
+  });
+
+  // Personal, per-device preference — every user gets their own copy
+  // of this rather than it being one shared world value, since whether
+  // someone wants a notification sound at all is entirely up to them.
+  // Foundry renders this automatically in Settings > Configure Settings
+  // since config is true, no custom UI needed for it.
+  game.settings.register(MODULE_ID, "pingVolume", {
+    name: "HSTL Crystal Ping Volume",
+    hint: "How loud the notification sound is when a new text message arrives for you. Set to 0 to disable it.",
+    scope: "client",
+    config: true,
+    type: Number,
+    range: { min: 0, max: 1, step: 0.05 },
+    default: 0.5
   });
 
   console.log("HSTL Crystal | Initialized");
@@ -246,6 +262,8 @@ Hooks.once("ready", () => {
       await appendReply(data.postId, data.reply);
     } else if (data?.type === "sendText" && data.crystalId && data.contactId) {
       await appendMessage(data.crystalId, data.contactId, data.text);
+    } else if (data?.type === "markThreadRead" && data.crystalId && data.contactId) {
+      await markThreadRead(data.crystalId, data.contactId, data.viewerKey);
     } else {
       console.warn("[HSTL] socket message did not match any known type/shape — nothing was written", data);
     }
@@ -261,6 +279,45 @@ Hooks.once("ready", () => {
 // and lets it reflect whatever the current world state is.
 Hooks.once("ready", () => {
   TrackerBar.render();
+});
+
+/* -------------------------------------------- */
+/*  New-message ping                             */
+/* -------------------------------------------- */
+
+/** In-memory only, per client — doesn't need to persist across reloads. */
+let lastKnownUnreadCount = null;
+
+function computeMyUnreadCount() {
+  if (game.user.isGM) {
+    return getUnreadThreads().length;
+  }
+  const myCrystals = (game.actors?.contents ?? []).filter(a => a.isOwner);
+  return myCrystals.reduce((total, a) => total + Object.keys(getUnreadForCrystal(a.id)).length, 0);
+}
+
+/**
+ * Plays locally only (the `false` second argument to AudioHelper.play
+ * is what stops this from broadcasting to every other connected
+ * client) — this is a personal notification, not something the whole
+ * table needs to hear every time anyone gets a text.
+ */
+function playPingIfLouderThanZero() {
+  const volume = game.settings.get(MODULE_ID, "pingVolume");
+  if (!volume || volume <= 0) return;
+  foundry.audio.AudioHelper.play({
+    src: `modules/${MODULE_ID}/sounds/crystal-ping.wav`,
+    volume,
+    autoplay: true,
+    loop: false
+  }, false);
+}
+
+Hooks.once("ready", () => {
+  // Establishes the baseline so nothing pings the instant the world
+  // finishes loading just because unread messages already existed from
+  // before this session started — only genuinely new activity counts.
+  lastKnownUnreadCount = computeMyUnreadCount();
 });
 
 Hooks.on("updateSetting", (setting) => {
@@ -283,8 +340,15 @@ Hooks.on("updateSetting", (setting) => {
       TrackerControlApp.instance.render();
     }
   }
-  if (setting.key === `${MODULE_ID}.texting` && TextingManagerApp.instance?.rendered) {
-    TextingManagerApp.instance.render();
+  if (setting.key === `${MODULE_ID}.texting`) {
+    if (TextingManagerApp.instance?.rendered) {
+      TextingManagerApp.instance.render();
+    }
+    const newCount = computeMyUnreadCount();
+    if (lastKnownUnreadCount !== null && newCount > lastKnownUnreadCount) {
+      playPingIfLouderThanZero();
+    }
+    lastKnownUnreadCount = newCount;
   }
   if (setting.key === `${MODULE_ID}.brokenCrystals` && CrystalControlApp.instance?.rendered) {
     CrystalControlApp.instance.render();

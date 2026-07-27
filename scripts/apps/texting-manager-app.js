@@ -1,4 +1,13 @@
-import { getGrantedContacts, setGrantedContacts, getThread, appendMessage, deleteMessage, importConversation } from "../texting.js";
+import {
+  getGrantedContacts,
+  setGrantedContacts,
+  getThread,
+  appendMessage,
+  deleteMessage,
+  importConversation,
+  markThreadRead,
+  getUnreadThreads
+} from "../texting.js";
 
 const MODULE_ID = "hstl-crystal";
 const { ApplicationV2, HandlebarsApplicationMixin } = foundry.applications.api;
@@ -31,7 +40,8 @@ export class TextingManagerApp extends HandlebarsApplicationMixin(ApplicationV2)
     actions: {
       sendAsContact: TextingManagerApp.#onSendAsContact,
       deleteMessage: TextingManagerApp.#onDeleteMessage,
-      importConversation: TextingManagerApp.#onImportConversation
+      importConversation: TextingManagerApp.#onImportConversation,
+      jumpToThread: TextingManagerApp.#onJumpToThread
     }
   };
 
@@ -101,7 +111,11 @@ export class TextingManagerApp extends HandlebarsApplicationMixin(ApplicationV2)
 
       if (target.matches?.("#tm-contact-select")) {
         this.selectedContactId = target.value || null;
-        this.render();
+        if (this.selectedCrystalId && this.selectedContactId) {
+          markThreadRead(this.selectedCrystalId, this.selectedContactId).then(() => this.render());
+        } else {
+          this.render();
+        }
         return;
       }
 
@@ -143,6 +157,14 @@ export class TextingManagerApp extends HandlebarsApplicationMixin(ApplicationV2)
       this.selectedCrystalId = actors[0].id;
     }
 
+    const unreadThreads = getUnreadThreads()
+      .map(u => ({
+        ...u,
+        crystalName: game.actors.get(u.crystalId)?.name ?? "Unknown",
+        contactName: game.actors.get(u.contactId)?.name ?? "Unknown"
+      }))
+      .filter(u => u.crystalName !== "Unknown" && u.contactName !== "Unknown");
+
     const grantedIds = this.selectedCrystalId ? getGrantedContacts(this.selectedCrystalId) : [];
     const grantedSet = new Set(grantedIds);
 
@@ -170,6 +192,7 @@ export class TextingManagerApp extends HandlebarsApplicationMixin(ApplicationV2)
     }
 
     return {
+      unreadThreads,
       crystalOptions: actors.map(a => ({
         id: a.id,
         name: a.name,
@@ -189,11 +212,19 @@ export class TextingManagerApp extends HandlebarsApplicationMixin(ApplicationV2)
   /*  Actions                                      */
   /* -------------------------------------------- */
 
+  static async #onJumpToThread(_event, target) {
+    this.selectedCrystalId = target.dataset.crystalId;
+    this.selectedContactId = target.dataset.contactId;
+    await markThreadRead(this.selectedCrystalId, this.selectedContactId);
+    this.render();
+  }
+
   static async #onSendAsContact(_event, _target) {
     const input = this.element.querySelector('[name="tmMessage"]');
     const text = input?.value?.trim();
     if (!text || !this.selectedCrystalId || !this.selectedContactId) return;
     await appendMessage(this.selectedContactId, this.selectedCrystalId, text);
+    await markThreadRead(this.selectedCrystalId, this.selectedContactId);
     input.value = "";
     this.render();
   }

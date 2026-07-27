@@ -35,6 +35,9 @@
             {{else}}
             <i class="{{this.icon}}"></i>
             {{/if}}
+            {{#if this.badge}}
+            <span class="crystal-icon-badge">{{this.badge}}</span>
+            {{/if}}
           </span>
           <span class="crystal-icon-label">{{this.label}}</span>
         </div>
@@ -348,6 +351,9 @@
         {{#each contacts}}
         <div role="button" tabindex="0" class="texting-contact-row" data-action="openContact" data-contact-id="{{this.id}}">
           <span class="texting-contact-name">{{this.name}}</span>
+          {{#if this.unreadCount}}
+          <span class="texting-contact-badge">{{this.unreadCount}}</span>
+          {{/if}}
           <i class="fa-solid fa-chevron-right"></i>
         </div>
         {{/each}}

@@ -20,13 +20,24 @@ const MODULE_ID = "hstl-crystal";
  * carries senderId (an Actor id) rather than a relative "self"/"contact"
  * label, so which side a bubble renders on is computed fresh from
  * whoever's currently viewing it, not baked in at write time.
+ *
+ * reads: { [pairKey]: { [viewerKey]: timestamp } } — the last time a
+ * given viewer actually looked at that thread. viewerKey is either an
+ * Actor id (whichever crystal someone's viewing the thread as, GM or
+ * player) or the literal string "__gm__" for the GM's own Needs Reply
+ * tracking, which isn't tied to any single Actor since the GM can
+ * reply as a different contact in the same thread from one message to
+ * the next. Two independent viewers of the same thread — you replying
+ * as an NPC, a player reading it as their own crystal — never share a
+ * read marker, so one of you catching up doesn't silently mark it read
+ * for the other.
  */
 function pairKey(idA, idB) {
   return [idA, idB].sort().join("::");
 }
 
 export function getTexting() {
-  return game.settings.get(MODULE_ID, "texting") ?? { grants: {}, threads: {} };
+  return game.settings.get(MODULE_ID, "texting") ?? { grants: {}, threads: {}, reads: {} };
 }
 
 async function writeTexting(changes) {
@@ -56,6 +67,96 @@ export function setGrantedContacts(crystalId, contactIds) {
 
 export function getThread(crystalId, contactId) {
   return getTexting().threads?.[pairKey(crystalId, contactId)] ?? [];
+}
+
+/**
+ * Marks a thread as caught-up as of right now, for one specific viewer.
+ * viewerKey defaults to "__gm__" for the GM's own Needs Reply tracking;
+ * pass an Actor id when marking read on behalf of whichever crystal is
+ * actually being viewed (the phone always does this).
+ */
+export function markThreadRead(crystalId, contactId, viewerKey = "__gm__") {
+  return serialize(async () => {
+    const texting = getTexting();
+    const reads = { ...(texting.reads ?? {}) };
+    const key = pairKey(crystalId, contactId);
+    reads[key] = { ...(reads[key] ?? {}), [viewerKey]: Date.now() };
+    await writeTexting({ reads });
+  });
+}
+
+/**
+ * Every thread with at least one message newer than the GM last looked
+ * at it, newest activity first. This is what powers both the Needs
+ * Reply list and the badge count on the Contacts icon — with 30+
+ * actors, paging through every crystal individually to find where a
+ * player actually said something isn't workable, this is the fix for
+ * that.
+ */
+export function getUnreadThreads() {
+  const texting = getTexting();
+  const threads = texting.threads ?? {};
+  const reads = texting.reads ?? {};
+  const results = [];
+
+  for (const [key, messages] of Object.entries(threads)) {
+    if (!messages || messages.length === 0) continue;
+    const lastRead = reads[key]?.["__gm__"] ?? 0;
+    const unreadCount = messages.filter(m => m.timestamp > lastRead).length;
+    if (unreadCount === 0) continue;
+
+    const [idA, idB] = key.split("::");
+    const lastMessage = messages[messages.length - 1];
+    results.push({
+      crystalId: idA,
+      contactId: idB,
+      unreadCount,
+      lastTimestamp: lastMessage.timestamp,
+      lastSenderId: lastMessage.senderId
+    });
+  }
+
+  return results.sort((a, b) => b.lastTimestamp - a.lastTimestamp);
+}
+
+/**
+ * Per-contact unread counts for one specific crystal — { contactId:
+ * count, ... } — powers the badge on a player's Texts icon and the
+ * per-contact badges in their inbox list. A message the crystal itself
+ * sent never counts as unread for it, only messages from the other
+ * side of the conversation do.
+ */
+export function getUnreadForCrystal(crystalId) {
+  const texting = getTexting();
+  const threads = texting.threads ?? {};
+  const reads = texting.reads ?? {};
+  const result = {};
+
+  for (const [key, messages] of Object.entries(threads)) {
+    if (!messages || messages.length === 0) continue;
+    const [idA, idB] = key.split("::");
+    if (idA !== crystalId && idB !== crystalId) continue;
+    const contactId = idA === crystalId ? idB : idA;
+
+    const lastRead = reads[key]?.[crystalId] ?? 0;
+    const unreadCount = messages.filter(m => m.timestamp > lastRead && m.senderId !== crystalId).length;
+    if (unreadCount > 0) result[contactId] = unreadCount;
+  }
+
+  return result;
+}
+
+/**
+ * Player-facing version of markThreadRead — relays to the GM the same
+ * way every other player-originated write does, since a direct
+ * game.settings.set() call would silently fail for a non-GM client.
+ */
+export function submitMarkThreadRead(crystalId, contactId, viewerKey) {
+  if (game.user.isGM) {
+    return markThreadRead(crystalId, contactId, viewerKey);
+  }
+  game.socket.emit(`module.${MODULE_ID}`, { type: "markThreadRead", crystalId, contactId, viewerKey });
+  return Promise.resolve();
 }
 
 /**

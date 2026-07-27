@@ -1,5 +1,19 @@
 <div class="tm-body">
 
+  {{#if unreadThreads.length}}
+  <div class="tm-unread-section">
+    <div class="tm-col-header">Needs Reply ({{unreadThreads.length}})</div>
+    <div class="tm-unread-list">
+      {{#each unreadThreads}}
+      <div role="button" tabindex="0" class="tm-unread-row" data-action="jumpToThread" data-crystal-id="{{this.crystalId}}" data-contact-id="{{this.contactId}}">
+        <span class="tm-unread-names">{{this.crystalName}} ↔ {{this.contactName}}</span>
+        <span class="tm-unread-badge">{{this.unreadCount}}</span>
+      </div>
+      {{/each}}
+    </div>
+  </div>
+  {{/if}}
+
   <div class="tm-row">
     <label class="tm-label" for="tm-crystal-select">Crystal</label>
     <select id="tm-crystal-select" class="tm-select">
