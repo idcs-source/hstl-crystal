@@ -220,19 +220,54 @@ export class CrystalApp extends HandlebarsApplicationMixin(ApplicationV2) {
    * every render (first render included, before .scry-post-scroll even
    * exists yet, hence the guards), so this captures scrollTop right
    * before the DOM is replaced and restores it right after.
+   *
+   * The same replacement was also silently wiping out anything typed
+   * into a composer — since this app re-renders on any texting or Scry
+   * activity, not just activity relevant to what's currently open,
+   * receiving an unrelated message while mid-reply would blow away a
+   * draft that had nothing to do with it. Every non-empty textarea's
+   * value (and focus/cursor position, for whichever one was actually
+   * being typed in) gets captured here and restored the same way.
    */
   async _preRender(context, options) {
     await super._preRender(context, options);
     const scroller = this.element?.querySelector(".scry-post-scroll, .texting-thread-scroll");
     this._savedScrollTop = scroller ? scroller.scrollTop : null;
+
+    this._savedDrafts = [];
+    for (const el of this.element?.querySelectorAll("textarea") ?? []) {
+      if (!el.value) continue;
+      const key = el.dataset.replyInputFor ? `reply:${el.dataset.replyInputFor}` : `name:${el.name}`;
+      this._savedDrafts.push({
+        key,
+        value: el.value,
+        focused: document.activeElement === el,
+        selectionStart: el.selectionStart,
+        selectionEnd: el.selectionEnd
+      });
+    }
   }
 
   async _onRender(context, options) {
     await super._onRender(context, options);
-    if (this._savedScrollTop == null) return;
-    const scroller = this.element.querySelector(".scry-post-scroll, .texting-thread-scroll");
-    if (scroller) scroller.scrollTop = this._savedScrollTop;
-    this._savedScrollTop = null;
+    if (this._savedScrollTop != null) {
+      const scroller = this.element.querySelector(".scry-post-scroll, .texting-thread-scroll");
+      if (scroller) scroller.scrollTop = this._savedScrollTop;
+      this._savedScrollTop = null;
+    }
+
+    for (const draft of this._savedDrafts ?? []) {
+      const el = draft.key.startsWith("reply:")
+        ? this.element.querySelector(`[data-reply-input-for="${draft.key.slice(6)}"]`)
+        : this.element.querySelector(`textarea[name="${draft.key.slice(5)}"]`);
+      if (!el) continue;
+      el.value = draft.value;
+      if (draft.focused) {
+        el.focus();
+        el.setSelectionRange(draft.selectionStart, draft.selectionEnd);
+      }
+    }
+    this._savedDrafts = [];
   }
 
   /* -------------------------------------------- */
@@ -384,10 +419,18 @@ export class CrystalApp extends HandlebarsApplicationMixin(ApplicationV2) {
 
       const grantedIds = this.selectedCrystalId ? getGrantedContacts(this.selectedCrystalId) : [];
       const unreadByContact = this.selectedCrystalId ? getUnreadForCrystal(this.selectedCrystalId) : {};
-      context.contacts = grantedIds
-        .map(id => game.actors.get(id))
-        .filter(Boolean)
-        .map(a => ({ id: a.id, name: a.name, unreadCount: unreadByContact[a.id] ?? 0 }));
+      // Not filtering out contacts whose Actor no longer exists — that
+      // used to happen here too, and it meant a deleted contact's
+      // thread could carry an unread count that showed up as a badge
+      // with no row left to click to ever clear it.
+      context.contacts = grantedIds.map(id => {
+        const actor = game.actors.get(id);
+        return {
+          id,
+          name: actor?.name ?? `Deleted Contact (${id})`,
+          unreadCount: unreadByContact[id] ?? 0
+        };
+      });
 
       if (this.view === "texting-thread") {
         const contact = this.selectedContactId ? game.actors.get(this.selectedContactId) : null;

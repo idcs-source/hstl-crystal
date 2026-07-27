@@ -135,6 +135,22 @@ export class TextingManagerApp extends HandlebarsApplicationMixin(ApplicationV2)
     const thread = this.element?.querySelector(".tm-thread-scroll");
     this._savedChecklistScroll = checklist ? checklist.scrollTop : null;
     this._savedThreadScroll = thread ? thread.scrollTop : null;
+
+    // Same issue as the phone — this window re-renders on any texting
+    // activity anywhere, not just the thread currently open, so a
+    // message landing in a completely different conversation could
+    // wipe out a reply, or a half-pasted import script, mid-typing.
+    this._savedDrafts = [];
+    for (const el of this.element?.querySelectorAll("textarea") ?? []) {
+      if (!el.value) continue;
+      this._savedDrafts.push({
+        name: el.name,
+        value: el.value,
+        focused: document.activeElement === el,
+        selectionStart: el.selectionStart,
+        selectionEnd: el.selectionEnd
+      });
+    }
   }
 
   async _onRender(context, options) {
@@ -149,6 +165,17 @@ export class TextingManagerApp extends HandlebarsApplicationMixin(ApplicationV2)
     }
     this._savedChecklistScroll = null;
     this._savedThreadScroll = null;
+
+    for (const draft of this._savedDrafts ?? []) {
+      const el = this.element.querySelector(`textarea[name="${draft.name}"]`);
+      if (!el) continue;
+      el.value = draft.value;
+      if (draft.focused) {
+        el.focus();
+        el.setSelectionRange(draft.selectionStart, draft.selectionEnd);
+      }
+    }
+    this._savedDrafts = [];
   }
 
   async _prepareContext(_options) {
