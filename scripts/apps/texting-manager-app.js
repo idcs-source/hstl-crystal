@@ -253,9 +253,9 @@ export class TextingManagerApp extends HandlebarsApplicationMixin(ApplicationV2)
     const input = this.element.querySelector('[name="tmMessage"]');
     const text = input?.value?.trim();
     if (!text || !this.selectedCrystalId || !this.selectedContactId) return;
+    input.value = "";
     await appendMessage(this.selectedContactId, this.selectedCrystalId, text);
     await markThreadRead(this.selectedCrystalId, this.selectedContactId);
-    input.value = "";
     this.render();
   }
 
@@ -280,12 +280,17 @@ export class TextingManagerApp extends HandlebarsApplicationMixin(ApplicationV2)
     const replaceCheckbox = this.element.querySelector('[name="tmImportReplace"]');
     const replace = !!replaceCheckbox?.checked;
 
+    scriptInput.value = "";
     const { count } = await importConversation(this.selectedCrystalId, this.selectedContactId, raw, { spreadDays, replace });
     if (count === 0) {
       ui.notifications.warn('No valid lines found — each line needs to start with "Crystal:" or "Contact:".');
+      // Put the pasted script back rather than losing it on a failed
+      // import — looked up fresh rather than reusing scriptInput, in
+      // case an intermediate re-render already replaced that element.
+      const freshInput = this.element.querySelector('[name="tmImportScript"]');
+      if (freshInput) freshInput.value = raw;
       return;
     }
-    scriptInput.value = "";
     ui.notifications.info(`Imported ${count} message${count === 1 ? "" : "s"}.`);
     this.render();
   }

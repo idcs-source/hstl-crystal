@@ -582,9 +582,9 @@ export class CrystalApp extends HandlebarsApplicationMixin(ApplicationV2) {
     const text = textarea?.value?.trim();
     if (!text) return;
 
+    textarea.value = "";
     const { actorId, name: actorName, img: actorImg } = CrystalApp.#getActiveIdentity(this);
     await submitScryPost({ actorId, actorName, actorImg, text, imagePath: this.pendingImagePath });
-    textarea.value = "";
     this.pendingImagePath = null;
     this.render();
   }
@@ -719,6 +719,7 @@ export class CrystalApp extends HandlebarsApplicationMixin(ApplicationV2) {
     const text = input?.value?.trim();
     if (!text) return;
 
+    input.value = "";
     const { actorId, name: actorName, img: actorImg } = CrystalApp.#getActiveIdentity(this);
     await submitReply(postId, { actorId, actorName, actorImg, text });
     this.openReplyPostId = null;
@@ -829,12 +830,12 @@ export class CrystalApp extends HandlebarsApplicationMixin(ApplicationV2) {
     const textarea = this.element.querySelector('[name="textingMessage"]');
     const text = textarea?.value?.trim();
     if (!text || !this.selectedCrystalId || !this.selectedContactId) return;
+    textarea.value = "";
     await submitTextMessage(this.selectedCrystalId, this.selectedContactId, text);
     await submitMarkThreadRead(this.selectedCrystalId, this.selectedContactId, this.selectedCrystalId);
     if (game.user.isGM) {
       await submitMarkThreadRead(this.selectedCrystalId, this.selectedContactId, "__gm__");
     }
-    textarea.value = "";
     this.render();
   }
 
