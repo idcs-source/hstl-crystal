@@ -157,13 +157,16 @@ export class TextingManagerApp extends HandlebarsApplicationMixin(ApplicationV2)
       this.selectedCrystalId = actors[0].id;
     }
 
-    const unreadThreads = getUnreadThreads()
-      .map(u => ({
-        ...u,
-        crystalName: game.actors.get(u.crystalId)?.name ?? "Unknown",
-        contactName: game.actors.get(u.contactId)?.name ?? "Unknown"
-      }))
-      .filter(u => u.crystalName !== "Unknown" && u.contactName !== "Unknown");
+    // Deliberately not filtering out unresolved actors here — that used
+    // to happen, and it meant a thread involving a deleted or missing
+    // Actor would still count toward the badge on the home screen but
+    // vanish from this list entirely, leaving no way to ever find or
+    // clear it. Better to surface it with a fallback label than hide it.
+    const unreadThreads = getUnreadThreads().map(u => ({
+      ...u,
+      crystalName: game.actors.get(u.crystalId)?.name ?? `Unknown Actor (${u.crystalId})`,
+      contactName: game.actors.get(u.contactId)?.name ?? `Unknown Actor (${u.contactId})`
+    }));
 
     const grantedIds = this.selectedCrystalId ? getGrantedContacts(this.selectedCrystalId) : [];
     const grantedSet = new Set(grantedIds);
