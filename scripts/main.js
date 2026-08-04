@@ -4,7 +4,7 @@ import { TrackerControlApp } from "./apps/tracker-control-app.js";
 import { TextingManagerApp } from "./apps/texting-manager-app.js";
 import { CrystalControlApp } from "./apps/crystal-control-app.js";
 import { TrackerBar } from "./apps/tracker-bar.js";
-import { writeScryPost, applyReaction, appendReply } from "./scry.js";
+import { ensureScryJournal } from "./scry.js";
 import { writeJobUpdate, acceptJobIfOpen } from "./jobs.js";
 import { writeTracker } from "./tracker.js";
 import { writeBank } from "./bank.js";
@@ -148,6 +148,8 @@ Hooks.once("init", () => {
 /* -------------------------------------------- */
 
 Hooks.once("ready", async () => {
+  await ensureScryJournal();
+
   const existing = game.settings.get(MODULE_ID, "jobs");
   if (game.user.isGM && (!existing || existing.length === 0)) {
     try {
@@ -237,18 +239,18 @@ async function openCrystal() {
 
 Hooks.once("ready", () => {
   // Non-GM clients can't write world-scoped settings directly, so writes
-  // that need to come from a player (Scry posts, job accepts) get relayed
-  // here and the GM's client performs the actual write. The tracker has
-  // no player-facing controls today, but updateTracker is handled here
-  // too so it's relay-safe if that ever changes.
+  // that need to come from a player (job accepts, texting) get relayed
+  // here and the GM's client performs the actual write. Scry used to be
+  // relayed the same way, but now writes directly to a journal entry
+  // every player owns, so it no longer needs a branch here at all. The
+  // tracker has no player-facing controls today, but updateTracker is
+  // handled here too so it's relay-safe if that ever changes.
   console.log(`[HSTL] Registering socket relay listener for ${game.user.name} (isGM=${game.user.isGM})`);
   game.socket.on(`module.${MODULE_ID}`, async (data) => {
     console.log(`[HSTL] socket message received by ${game.user.name} (isGM=${game.user.isGM})`, data);
     if (!game.user.isGM) return;
     console.log("[HSTL] processing on GM client, type:", data?.type);
-    if (data?.type === "createScryPost" && data.post) {
-      await writeScryPost(data.post);
-    } else if (data?.type === "updateJob" && data.jobId) {
+    if (data?.type === "updateJob" && data.jobId) {
       await writeJobUpdate(data.jobId, data.changes ?? {});
     } else if (data?.type === "acceptJob" && data.jobId) {
       await acceptJobIfOpen(data.jobId, data.claimantName);
@@ -256,10 +258,6 @@ Hooks.once("ready", () => {
       await writeTracker(data.changes ?? {});
     } else if (data?.type === "updateBank") {
       await writeBank(data.changes ?? {});
-    } else if (data?.type === "reactToPost" && data.postId) {
-      await applyReaction(data.postId, data.kind, data.reactorKey, data.reactorName);
-    } else if (data?.type === "replyToPost" && data.postId && data.reply) {
-      await appendReply(data.postId, data.reply);
     } else if (data?.type === "sendText" && data.crystalId && data.contactId) {
       await appendMessage(data.crystalId, data.contactId, data.text);
     } else if (data?.type === "markThreadRead" && data.crystalId && data.contactId) {
@@ -324,7 +322,6 @@ Hooks.once("ready", () => {
 
 Hooks.on("updateSetting", (setting) => {
   const watched = [
-    `${MODULE_ID}.scryPosts`,
     `${MODULE_ID}.jobs`,
     `${MODULE_ID}.activeTracker`,
     `${MODULE_ID}.bank`,
@@ -354,6 +351,20 @@ Hooks.on("updateSetting", (setting) => {
   }
   if (setting.key === `${MODULE_ID}.brokenCrystals` && CrystalControlApp.instance?.rendered) {
     CrystalControlApp.instance.render();
+  }
+});
+
+/**
+ * Scry posts live on a journal entry now, not a world setting, so they
+ * don't go through the updateSetting watcher above at all. Foundry
+ * broadcasts document updates to every connected client the same way
+ * regardless of who made the change, GM or player, so this fires for
+ * everyone whenever anyone posts, reacts, or replies on Scry.
+ */
+Hooks.on("updateJournalEntry", (journal) => {
+  if (!journal.getFlag(MODULE_ID, "isScryStore")) return;
+  if (crystalAppInstance?.rendered) {
+    crystalAppInstance.render();
   }
 });
 
